@@ -5,14 +5,22 @@ CFLAGS=-o $(TARGET)
 
 OBJECTS=register_bank.v test.v
 
-GRAPHL=gtkwave
+EXECHDL=vvp
+DATAFILE=$(shell grep $(OBJECTS) -e "\$dumpfile\(.*\)" | sed -E "s:.*dumpfile\(\"(.*)\"\);:\1:")
 
-#graph: all
-#	$(GRAPHL) *.vcd
+GRAPHL=gtkwave
 
 all: $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS)
 	
+$(DATAFILE) : all
+	$(EXECHDL) $(TARGET)
+
+exec: $(DATAFILE)
+
+graph: $(DATAFILE)
+	$(GRAPHL) $(DATAFILE)
+
 clean: 
-	rm *.vcd $(TARGET)
+	rm -f *.vcd $(TARGET)
 	
