@@ -1,25 +1,31 @@
 CC=iverilog
-TARGET=register_bank
 
-CFLAGS=-o $(TARGET)
+CFLAGS=-o
 
-OBJECTS=register_bank.v test.v
+OBJECTS_SRC=$(shell ls src/*.v)
+OBJECTS=$(OBJECTS_SRC:src/%.v=%)
+
+TEST_OBJECTS=$(shell ls tests/*.v)
 
 EXECHDL=vvp
-DATAFILE=$(shell grep $(OBJECTS) -e "\$dumpfile\(.*\)" | sed -E "s:.*dumpfile\(\"(.*)\"\);:\1:")
+#DATAFILE=$(shell grep $(OBJECTS) -e "\$dumpfile\(.*\)" | sed -E "s:.*dumpfile\(\"(.*)\"\);:\1:")
 
 GRAPHL=gtkwave
 
-all: $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS)
-	
-$(DATAFILE) : all
-	$(EXECHDL) $(TARGET)
+all: $(OBJECTS_SRC)
+	@echo $(OBJECTS)
+	@echo $(OBJECTS_SRC)
+	$(CC) $(CFLAGS) bin/main $(OBJECTS_SRC)
 
-exec: $(DATAFILE)
+$(OBJECTS): % : $(OBJECTS_SRC) tests/test_%.v
+	$(CC) $(CFLAGS) bin/$@ $?
 
-graph: $(DATAFILE)
-	$(GRAPHL) $(DATAFILE)
+graphs/%.vcd : %
+	$(EXECHDL) bin/$^
+	mv *.vcd graphs/$^.vcd
+
+graph-$(OBJECTS): graph-% : graphs/%.vcd
+	$(GRAPHL) $^
 
 clean: 
 	rm -f *.vcd $(TARGET)

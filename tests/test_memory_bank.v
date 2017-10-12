@@ -1,10 +1,13 @@
 module test;
 
+    parameter MEMORY_DATA_WIDTH=256;
+    parameter MEMORY_ADDRESS_WIDTH=2;
+
     /* Make a reset that pulses once. */
-    reg [0:4] addr_in = 0;
-    reg [0:4] addr_out = 0;
-    reg [0:7] data_in = 1;
-    wire [0:7] data_out;
+    reg [0:MEMORY_ADDRESS_WIDTH-1] addr_in = 0;
+    reg [0:MEMORY_ADDRESS_WIDTH-1] addr_out = 0;
+    reg [0:MEMORY_DATA_WIDTH-1] data_in = 1;
+    wire [0:MEMORY_DATA_WIDTH-1] data_out;
     reg write = 0;
     reg reset = 1;
 
@@ -25,7 +28,10 @@ module test;
     always #10 clk = !clk;
 
     wire [7:0] value;
-    register_bank rbank(
+    memory_bank #(
+        MEMORY_DATA_WIDTH,
+        MEMORY_ADDRESS_WIDTH
+    ) rbank(
         .clk(clk), 
         .reset(reset), 
         .data_in(data_in),

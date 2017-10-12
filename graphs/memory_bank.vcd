@@ -1,5 +1,5 @@
 $date
-	Sat Sep 30 13:18:01 2017
+	Thu Oct 12 14:20:40 2017
 $end
 $version
 	Icarus Verilog
@@ -8,19 +8,19 @@ $timescale
 	1s
 $end
 $scope module test $end
-$var wire 8 ! data_out [0:7] $end
-$var reg 5 " addr_in [0:4] $end
-$var reg 5 # addr_out [0:4] $end
+$var wire 256 ! data_out [0:255] $end
+$var reg 2 " addr_in [0:1] $end
+$var reg 2 # addr_out [0:1] $end
 $var reg 1 $ clk $end
-$var reg 8 % data_in [0:7] $end
+$var reg 256 % data_in [0:255] $end
 $var reg 1 & reset $end
 $var reg 1 ' write $end
 $scope module rbank $end
-$var wire 5 ( addr_in [0:4] $end
-$var wire 5 ) addr_out [0:4] $end
+$var wire 2 ( addr_in [0:1] $end
+$var wire 2 ) addr_out [0:1] $end
 $var wire 1 $ clk $end
-$var wire 8 * data_in [0:7] $end
-$var wire 8 + data_out [0:7] $end
+$var wire 256 * data_in [0:255] $end
+$var wire 256 + data_out [0:255] $end
 $var wire 1 & reset $end
 $var wire 1 ' write $end
 $var integer 32 , i [31:0] $end
@@ -29,7 +29,7 @@ $upscope $end
 $enddefinitions $end
 #0
 $dumpvars
-b10000 ,
+b100 ,
 b0 +
 b1 *
 b0 )
@@ -53,15 +53,13 @@ b1 (
 1'
 b100 %
 b100 *
-b100 #
-b100 )
 #20
 0$
 #23
-b100 !
-b100 +
 b1 #
 b1 )
 #30
+b100 !
+b100 +
 1$
 #33
