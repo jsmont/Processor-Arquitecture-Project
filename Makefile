@@ -24,7 +24,7 @@ graphs/%.vcd : %
 	$(EXECHDL) bin/$^
 	mv *.vcd graphs/$^.vcd
 
-graph-$(OBJECTS): graph-% : graphs/%.vcd
+$(OBJECTS:%=graph-%): graph-% : graphs/%.vcd
 	$(GRAPHL) $^
 
 clean: 
