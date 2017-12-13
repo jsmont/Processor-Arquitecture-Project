@@ -1,36 +1,33 @@
 module test;
 
-    parameter REG_ADDRESS_SIZE=2;
+    parameter REG_ADDRESS_SIZE=5;
     parameter REG_SIZE=8;
 
     reg [0:REG_ADDRESS_SIZE-1] addr_in = 0;
     reg [0:REG_ADDRESS_SIZE-1] addr_out1 = 0;
     reg [0:REG_ADDRESS_SIZE-1] addr_out2 = 0;
-    reg [0:MEMORY_LINE_LENGTH-1] data_in = 1;
-    wire [0:MEMORY_LINE_LENGTH-1] data_out1;
-    wire [0:MEMORY_LINE_LENGTH-1] data_out2;
-    reg write = 0;
+    reg [0:REG_SIZE-1] data_in = 1;
+    wire [0:REG_SIZE-1] data_out1;
+    wire [0:REG_SIZE-1] data_out2;
+    reg write = 1;
     reg reset = 1;
+    integer i;
 
     initial begin
         $dumpfile("test.vcd");
-        $dumpvars(0,test);
+        $dumpvars(0, test);
 
-        #1 addr_in = 1;
+        #5 addr_in = 1;
         addr_out1 = 1;
         addr_out2 = 0;
         
-        integer i;
-        for(i = 0; i < (1 <<ADRESS_SIZE) -1 ; ++i){
-            if(i %2 == 0)
-                write = 1;
-            else
-                write = 0;
+        for(i = 0; i < (1 <<REG_ADDRESS_SIZE) -1 ; ++i) begin
 
-            #10 addr_in += 1;
+            #20 addr_in += 1;
+            data_in = i;
             addr_out1 += 1;
             addr_out2 += 1;
-        }
+        end
 
         #10 $finish;
     end
@@ -53,7 +50,4 @@ module test;
         .addr_out1(addr_out1),
         .addr_out2(addr_out2));
 
-    initial
-    $monitor("At time %t\twrite address=%h\tread data_in=%h\tdata_out=%h", 
-        $time, addr, data_in, data_out);
 endmodule // test

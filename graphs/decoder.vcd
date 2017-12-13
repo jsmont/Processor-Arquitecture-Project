@@ -1,0 +1,86 @@
+$date
+	Wed Dec 13 16:54:44 2017
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module test $end
+$var wire 5 ! addr_r1 [0:4] $end
+$var wire 5 " addr_r2 [0:4] $end
+$var wire 5 # addr_rd [0:4] $end
+$var wire 1 $ register_write $end
+$var wire 32 % immediate [0:31] $end
+$var reg 1 & clk $end
+$var reg 32 ' instruction [0:31] $end
+$var reg 1 ( reset $end
+$scope function test_instruction $end
+$var reg 32 ) inst [0:31] $end
+$var reg 1 * test_instruction $end
+$upscope $end
+$scope module dec $end
+$var wire 5 + addr_r1 [0:4] $end
+$var wire 5 , addr_r2 [0:4] $end
+$var wire 5 - addr_rd [0:4] $end
+$var wire 1 & clk $end
+$var wire 32 . immediate [0:31] $end
+$var wire 32 / instruction [0:31] $end
+$var wire 1 $ register_write $end
+$var wire 1 ( reset $end
+$var reg 32 0 current_instruction [0:31] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+b1 0
+b0 /
+b1 .
+b0 -
+b0 ,
+b0 +
+x*
+bx )
+1(
+b0 '
+0&
+b1 %
+0$
+b0 #
+b0 "
+b0 !
+$end
+#10
+b0 %
+b0 .
+b0 0
+1&
+#20
+0&
+#30
+1&
+#40
+0&
+#50
+1&
+#60
+0&
+#70
+1&
+#80
+0&
+b1 '
+b1 /
+#90
+b1 %
+b1 .
+b1 0
+1&
+#100
+0&
+#110
+1&
+#120
+0&
