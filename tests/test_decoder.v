@@ -13,19 +13,11 @@ module test;
     wire register_write ;
     integer i;
 
-
-    function test_instruction;
-        input [0:ADDRESS_SIZE-1]inst;
-        begin
-            instruction = inst;
-        end
-    endfunction
-
-
-
     initial begin
         $dumpfile("test.vcd");
         $dumpvars(0, test);
+
+        #1 reset = 0;
 
         #40 instruction = 32'b0;
         #40 instruction = 32'b1;
@@ -33,21 +25,14 @@ module test;
         #40 $finish;
     end
 
-    reg clk = 0;
-    always #10 clk = !clk;
-
-    always @ clk
+    always @ instruction
     begin
-        if(clk == 0)
-        begin
-            $display("\nInstruction: %b", instruction);
-            $display("R1: %1h\tR2: %1h\tRD: %1h\tW: %1b", addr_r1, addr_r2, addr_rd, register_write);
-            $display("Immediate: %b", immediate);
-        end
+        $display("\nInstruction: %b", instruction);
+        $display("R1: %1h\tR2: %1h\tRD: %1h\tW: %1b", addr_r1, addr_r2, addr_rd, register_write);
+        $display("Immediate: %b", immediate);
     end
 
     Decoder dec(
-        .clk(clk), 
         .reset(reset), 
         .instruction(instruction),
         .register_write(register_write), 

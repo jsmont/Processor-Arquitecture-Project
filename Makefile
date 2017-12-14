@@ -21,6 +21,7 @@ $(OBJECTS): % : $(OBJECTS_SRC) tests/test_%.v
 	$(CC) $(CFLAGS) bin/$@ $?
 
 graphs/%.vcd : %
+	mem/set_memory.sh mem/imem.dat mem/$^.imem
 	$(EXECHDL) bin/$^
 	mv *.vcd graphs/$^.vcd
 
