@@ -1,30 +1,29 @@
-module register_bank #(parameter REGISTER_SIZE=32, ADDRESS_SIZE=5)(
+module Register_bank #(parameter REGISTER_SIZE=32, ADDRESS_SIZE=5)(
     input clk,
     input reset,
-    input [0:REGISTER_SIZE-1] data_in,
-    output [0:REGISTER_SIZE-1] data_out1,
-    output [0:REGISTER_SIZE-1] data_out2,
+    input [REGISTER_SIZE-1:0] data_in,
+    output [REGISTER_SIZE-1:0] data_out1,
+    output [REGISTER_SIZE-1:0] data_out2,
     input write,
-    input [0:ADDRESS_SIZE-1] addr_out1,
-    input [0:ADDRESS_SIZE-1] addr_out2,
-    input [0:ADDRESS_SIZE-1] addr_in);
+    input [ADDRESS_SIZE-1:0] addr_out1,
+    input [ADDRESS_SIZE-1:0] addr_out2,
+    input [ADDRESS_SIZE-1:0] addr_in);
 
-    reg [0:REGISTER_SIZE-1] bank [0:(1<<ADDRESS_SIZE)-1];
+    reg [REGISTER_SIZE-1:0] bank [(1<<ADDRESS_SIZE)-1:0];
 
-    always @ clk
+    always @(posedge clk)
     begin
 
-        if(clk && write && (addr_in != 5'b0)) 
+        if(write && (addr_in != 5'b0)) 
         begin
             bank[addr_in] = data_in;
         end
     end
 
     integer i;
-    always @ reset
+    always @(posedge reset)
     begin
-        if(reset)
-            for (i=0; i<(1<<ADDRESS_SIZE); i=i+1) bank[i] <= 32'h0;
+        for (i=0; i<(1<<ADDRESS_SIZE); i=i+1) bank[i] <= 32'h0;
     end
 
     assign data_out1 = bank[addr_out1];

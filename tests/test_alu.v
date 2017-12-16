@@ -2,10 +2,10 @@ module test;
 
     parameter OPERAND_SIZE=32;
 
-    reg [0:OPERAND_SIZE-1] operand1 = 32'b0;
-    reg [0:OPERAND_SIZE-1] operand2 = 32'b0;
+    reg [OPERAND_SIZE-1:0] operand1 = 32'b0;
+    reg [OPERAND_SIZE-1:0] operand2 = 32'b0;
 
-    wire [0:OPERAND_SIZE-1] result;
+    wire [OPERAND_SIZE-1:0] result;
     wire zero;
 
     initial begin

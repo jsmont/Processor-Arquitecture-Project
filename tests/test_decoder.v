@@ -4,12 +4,12 @@ module test;
     parameter REG_ADDRESS_SIZE=5;
 
     reg reset = 1;
-    reg [0:ADDRESS_SIZE-1] instruction = 32'b0;
+    reg [ADDRESS_SIZE-1:0] instruction = 32'b0;
 
-    wire [0:REG_ADDRESS_SIZE-1] addr_rd;
-    wire [0:REG_ADDRESS_SIZE-1] addr_r1;
-    wire [0:REG_ADDRESS_SIZE-1] addr_r2;
-    wire [0:ADDRESS_SIZE-1] immediate;
+    wire [REG_ADDRESS_SIZE-1:0] addr_rd;
+    wire [REG_ADDRESS_SIZE-1:0] addr_r1;
+    wire [REG_ADDRESS_SIZE-1:0] addr_r2;
+    wire [ADDRESS_SIZE-1:0] immediate;
     wire register_write ;
     integer i;
 

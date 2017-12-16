@@ -3,12 +3,12 @@ module test;
     parameter REG_ADDRESS_SIZE=5;
     parameter REG_SIZE=8;
 
-    reg [0:REG_ADDRESS_SIZE-1] addr_in = 0;
-    reg [0:REG_ADDRESS_SIZE-1] addr_out1 = 0;
-    reg [0:REG_ADDRESS_SIZE-1] addr_out2 = 0;
-    reg [0:REG_SIZE-1] data_in = 1;
-    wire [0:REG_SIZE-1] data_out1;
-    wire [0:REG_SIZE-1] data_out2;
+    reg [REG_ADDRESS_SIZE-1:0] addr_in = 0;
+    reg [REG_ADDRESS_SIZE-1:0] addr_out1 = 0;
+    reg [REG_ADDRESS_SIZE-1:0] addr_out2 = 0;
+    reg [REG_SIZE-1:0] data_in = 1;
+    wire [REG_SIZE-1:0] data_out1;
+    wire [REG_SIZE-1:0] data_out2;
     reg write = 1;
     reg reset = 1;
     integer i;
@@ -35,7 +35,7 @@ module test;
     reg clk = 0;
     always #10 clk = !clk;
 
-    wire [7:0] value;
+    wire [0:7] value;
     register_bank #(
         .ADDRESS_SIZE(REG_ADDRESS_SIZE),
         .REGISTER_SIZE(REG_SIZE)

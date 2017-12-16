@@ -4,9 +4,9 @@ module test;
     parameter BOOT_ADDRESS=32'h1000;
 
     reg reset = 1;
-    reg [0:ADDRESS_SIZE-1] address = 32'b0;
+    reg [ADDRESS_SIZE-1:0] address = 32'b0;
 
-    wire [0:ADDRESS_SIZE-1] instruction;
+    wire [ADDRESS_SIZE-1:0] instruction;
     integer i;
 
     initial begin

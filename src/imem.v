@@ -1,9 +1,9 @@
 module Imem #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'h1000)(
     input reset,
-    input [0:ADDRESS_SIZE-1] address,
-    output [0:ADDRESS_SIZE-1] instruction);
+    input [ADDRESS_SIZE-1:0] address,
+    output [ADDRESS_SIZE-1:0] instruction);
 
-    reg [7:0] memory [BOOT_ADDRESS:BOOT_ADDRESS+MEM_SIZE];
+    reg [7:0] memory [BOOT_ADDRESS+MEM_SIZE:BOOT_ADDRESS];
 
     initial $readmemb("mem/imem.dat", memory); 
 
