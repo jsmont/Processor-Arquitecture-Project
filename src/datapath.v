@@ -12,8 +12,7 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     wire [ADDRESS_SIZE-1:0] immediate;
     wire register_write;
     wire use_immediate;
-    wire [1:0] function_block;
-    wire [2:0] operation;
+    wire operation;
 
     wire [ADDRESS_SIZE-1:0] data_r1;
     wire [ADDRESS_SIZE-1:0] data_r2;
@@ -48,7 +47,6 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .register_write(register_write),
         .immediate(immediate),
         .use_immediate(use_immediate),
-        .function_block(function_block),
         .operation(operation));
 
     Register_bank rbank(
@@ -63,7 +61,6 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .data_out2(data_r2));
 
     Alu alu(
-        .function_block(function_block),
         .operation(operation),
         .operand1(data_r1),
         .operand2(operand2),

@@ -9,24 +9,27 @@ module Register_bank #(parameter REGISTER_SIZE=32, ADDRESS_SIZE=5)(
     input [ADDRESS_SIZE-1:0] addr_out2,
     input [ADDRESS_SIZE-1:0] addr_in);
 
-    reg [REGISTER_SIZE-1:0] bank [(1<<ADDRESS_SIZE)-1:0];
+    //reg [REGISTER_SIZE-1:0] bank [(1<<ADDRESS_SIZE)-1:0];
+    wire FF_write[(1<<ADDRESS_SIZE)-1:0];
+    wire [REGISTER_SIZE-1:0] FF_out[(1<<ADDRESS_SIZE)-1:0];
 
-    always @(posedge clk)
-    begin
 
-        if(write && (addr_in != 5'b0)) 
+    generate
+        genvar i;
+        for(i=0; i < (1<<ADDRESS_SIZE); i=i+1)
         begin
-            bank[addr_in] = data_in;
+            assign FF_write[i] = addr_in == i? write & clk : 0;
+            FF #(
+                .SIZE(REGISTER_SIZE)
+            ) register(
+                .in(data_in),
+                .write(FF_write[i]),
+                .reset(reset),
+                .out(FF_out[i]));
         end
-    end
+    endgenerate
 
-    integer i;
-    always @(posedge reset)
-    begin
-        for (i=0; i<(1<<ADDRESS_SIZE); i=i+1) bank[i] <= 32'h0;
-    end
-
-    assign data_out1 = bank[addr_out1];
-    assign data_out2 = bank[addr_out2];
+    assign data_out1 = FF_out[addr_out1];
+    assign data_out2 = FF_out[addr_out2];
 
 endmodule

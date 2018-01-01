@@ -36,7 +36,7 @@ module test;
     always #10 clk = !clk;
 
     wire [0:7] value;
-    register_bank #(
+    Register_bank #(
         .ADDRESS_SIZE(REG_ADDRESS_SIZE),
         .REGISTER_SIZE(REG_SIZE)
     ) rbank(
