@@ -18,7 +18,7 @@ module Register_bank #(parameter REGISTER_SIZE=32, ADDRESS_SIZE=5)(
         genvar i;
         for(i=0; i < (1<<ADDRESS_SIZE); i=i+1)
         begin
-            assign FF_write[i] = addr_in == i? write & clk : 0;
+            assign FF_write[i] = addr_in == i? write & !clk : 0;
             FF #(
                 .SIZE(REGISTER_SIZE)
             ) register(

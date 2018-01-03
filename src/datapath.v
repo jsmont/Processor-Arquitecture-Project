@@ -37,19 +37,19 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     wire D_Ie;
     wire D_Op;
 
-    Decoder decoder(
-        .instruction(D_instruction),
-        .addr_r1(D_r1),
-        .addr_r2(D_r2),
-        .addr_rd(D_rd),
-        .register_write(D_We),
-        .immediate(D_Immediate),
-        .use_immediate(D_Ie),
-        .operation(D_Op));
+    D decoder(
+        .D_instruction(D_instruction),
+        .D_addr_r1(D_r1),
+        .D_addr_r2(D_r2),
+        .D_addr_rd(D_rd),
+        .D_We(D_We),
+        .D_immediate(D_Immediate),
+        .D_Ie(D_Ie),
+        .D_op(D_Op));
 
     wire [REG_ADDRESS_SIZE-1:0] DM_r1;
     wire [REG_ADDRESS_SIZE-1:0] DM_r2;
-    wire [REG_ADDRESS_SIZE-1+2:0] DM_static;
+    wire [REG_ADDRESS_SIZE-1+2:0] DM_static_in;
     wire [ADDRESS_SIZE-1:0] DM_Immediate;
     wire DM_Ie;
 
@@ -57,51 +57,57 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .reset(reset),
         .write(clk),
         .in({D_Immediate, D_Ie, D_r2, D_r1, D_Op, D_rd, D_We}),
-        .out({DM_Immediate, DM_Ie, DM_r2, DM_r1, DM_static}));
+        .out({DM_Immediate, DM_Ie, DM_r2, DM_r1, DM_static_in}));
 
     wire [REG_ADDRESS_SIZE-1:0] DM_rd;
     wire [ADDRESS_SIZE-1:0] DM_result;
     wire DM_We;
     wire [ADDRESS_SIZE-1:0] DM_operand1;
     wire [ADDRESS_SIZE-1:0] DM_operand2;
+    wire [REG_ADDRESS_SIZE-1+2:0] DM_static_out;
 
-    Data_Management dm(
+    DM dm(
         .clk(clk),
         .reset(reset),
-        .addr_r1(DM_r1),
-        .addr_r2(DM_r2),
-        .addr_rd(DM_rd),
-        .rd(DM_result),
-        .We(DM_We),
-        .immediate(DM_Immediate),
-        .Ie(DM_Ie),
-        .operand1(DM_operand1),
-        .operand2(DM_operand2));
+        .DM_addr_r1(DM_r1),
+        .DM_addr_r2(DM_r2),
+        .DM_addr_rd(DM_rd),
+        .DM_rd(DM_result),
+        .DM_We(DM_We),
+        .DM_immediate(DM_Immediate),
+        .DM_Ie(DM_Ie),
+        .DM_operand1(DM_operand1),
+        .DM_operand2(DM_operand2),
+        .DM_static_in(DM_static_in),
+        .DM_static_out(DM_static_out));
 
     wire ALU_op;
     wire [ADDRESS_SIZE-1:0] ALU_operand1;
     wire [ADDRESS_SIZE-1:0] ALU_operand2;
-    wire [REG_ADDRESS_SIZE-1+1:0] ALU_static;
+    wire [REG_ADDRESS_SIZE-1+1:0] ALU_static_in;
 
     FF #(71) DM_ALU(
         .reset(reset),
         .write(clk),
-        .in({DM_operand2, DM_operand1, DM_static}),
-        .out({ALU_operand2, ALU_operand1, ALU_op, ALU_static}));
+        .in({DM_operand2, DM_operand1, DM_static_out}),
+        .out({ALU_operand2, ALU_operand1, ALU_op, ALU_static_in}));
 
     wire [ADDRESS_SIZE-1:0] ALU_result;
+    wire [REG_ADDRESS_SIZE-1+1:0] ALU_static_out;
 
-    Alu alu(
-        .operation(ALU_op),
-        .operand1(ALU_operand1),
-        .operand2(ALU_operand2),
-        .result(ALU_result),
-        .zero(zero));
+    ALU Alu(
+        .ALU_op(ALU_op),
+        .ALU_operand1(ALU_operand1),
+        .ALU_operand2(ALU_operand2),
+        .ALU_static_in(ALU_static_in),
+        .ALU_result(ALU_result),
+        .ALU_static_out(ALU_static_out));
+
 
     FF #(38) ALU_DM(
         .reset(reset),
         .write(clk),
-        .in({ ALU_result, ALU_static}),
+        .in({ ALU_result, ALU_static_out}),
         .out({ DM_result, DM_rd, DM_We}));
 
 

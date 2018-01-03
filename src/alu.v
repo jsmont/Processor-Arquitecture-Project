@@ -1,14 +1,18 @@
-module Alu #(parameter OPERAND_SIZE=32)(
-    input operation,
-    input [OPERAND_SIZE-1:0] operand1,
-    input [OPERAND_SIZE-1:0] operand2,
-    output [OPERAND_SIZE-1:0] result,
-    output zero);
+module ALU #(parameter OPERAND_SIZE=32, REG_ADDRESS_SIZE=5)(
+    input ALU_op,
+    input [OPERAND_SIZE-1:0] ALU_operand1,
+    input [OPERAND_SIZE-1:0] ALU_operand2,
+    input [REG_ADDRESS_SIZE-1+1:0] ALU_static_in,
+    output [OPERAND_SIZE-1:0] ALU_result,
+    output [REG_ADDRESS_SIZE-1+1:0] ALU_static_out);
+    
+    Alu alu(
+        .operation(ALU_op),
+        .operand1(ALU_operand1),
+        .operand2(ALU_operand2),
+        .result(ALU_result),
+        .zero(zero));
 
-    assign result =
-        (operation)? operand1 - operand2 
-        : operand1 + operand2;
-
-    assign zero = (result == 0);
+    assign ALU_static_out = ALU_static_in;
 
 endmodule
