@@ -1,5 +1,5 @@
 $date
-	Wed Jan  3 01:28:48 2018
+	Wed Jan  3 01:38:27 2018
 $end
 $version
 	Icarus Verilog
@@ -55,7 +55,7 @@ $var wire 6 C ALU_static_in [5:0] $end
 $var wire 6 D ALU_static_out [5:0] $end
 $var wire 1 E zero $end
 $var wire 32 F ALU_result [31:0] $end
-$scope module alu $end
+$scope module ilu $end
 $var wire 32 G operand1 [31:0] $end
 $var wire 32 H operand2 [31:0] $end
 $var wire 1 < operation $end

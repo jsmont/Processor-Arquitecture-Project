@@ -6,7 +6,7 @@ module ALU #(parameter OPERAND_SIZE=32, REG_ADDRESS_SIZE=5)(
     output [OPERAND_SIZE-1:0] ALU_result,
     output [REG_ADDRESS_SIZE-1+1:0] ALU_static_out);
     
-    Alu alu(
+    Ilu ilu(
         .operation(ALU_op),
         .operand1(ALU_operand1),
         .operand2(ALU_operand2),
