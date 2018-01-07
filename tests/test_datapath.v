@@ -9,10 +9,10 @@ module test;
 
         #1 reset = 0;
 
-        #400 $finish;
+        #1000 $finish;
     end
 
-    always #1 clk = !clk;
+    always #20 clk = !clk;
 
     Datapath dpath(
         .reset(reset),

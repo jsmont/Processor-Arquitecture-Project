@@ -24,6 +24,8 @@ module Register_bank #(parameter REGISTER_SIZE=32, ADDRESS_SIZE=5)(
             ) register(
                 .in(data_in),
                 .write(FF_write[i]),
+                .erase(1'b0),
+                .stall(1'b0),
                 .reset(reset),
                 .out(FF_out[i]));
         end

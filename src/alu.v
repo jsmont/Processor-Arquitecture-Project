@@ -1,10 +1,10 @@
-module ALU #(parameter OPERAND_SIZE=32, REG_ADDRESS_SIZE=5)(
+module ALU #(parameter OPERAND_SIZE=32, REG_ADDRESS_SIZE=5, ADDRESS_SIZE=32)(
     input ALU_op,
     input [OPERAND_SIZE-1:0] ALU_operand1,
     input [OPERAND_SIZE-1:0] ALU_operand2,
-    input [REG_ADDRESS_SIZE-1+1:0] ALU_static_in,
     output [OPERAND_SIZE-1:0] ALU_result,
-    output [REG_ADDRESS_SIZE-1+1:0] ALU_static_out);
+    input [REG_ADDRESS_SIZE-1+2+ADDRESS_SIZE:0] ALU_static_in,
+    output [REG_ADDRESS_SIZE-1+2+ADDRESS_SIZE:0] ALU_static_out);
     
     Ilu ilu(
         .operation(ALU_op),
