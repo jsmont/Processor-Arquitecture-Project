@@ -9,7 +9,7 @@ module test;
 
         #1 reset = 0;
 
-        #1000 $finish;
+        #5000 $finish;
     end
 
     always #20 clk = !clk;

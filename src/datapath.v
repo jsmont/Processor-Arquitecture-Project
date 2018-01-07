@@ -5,11 +5,10 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     // STALLS
 
     wire I_stall;
-    wire D_stall;
     wire DM_stall;
 
     // BYPASSES
-    
+
     wire [ADDRESS_SIZE-1: 0] ALU_bypass;
     wire [ADDRESS_SIZE-1: 0] DM_W_bypass;
 
@@ -52,57 +51,19 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .pc(PC_current),
         .I_instruction(I_instruction),
         .I_stall(I_stall),
-        .I_stall_in(D_stall));
+        .I_stall_in(DM_stall));
 
-    wire [ADDRESS_SIZE-1:0] D_instruction;
-    wire [ADDRESS_SIZE-1:0] D_pc;
+    wire [ADDRESS_SIZE-1:0] DM_instruction;
+    wire [ADDRESS_SIZE-1:0] DM_pc;
 
-    FF #(64) I_D(
+    FF #(64) I_DM(
         .reset(reset),
         .erase(I_stall || PC_clear),
         .write(clk),
-        .stall(D_stall),
-        .in({PC_current, I_instruction}),
-        .out({D_pc, D_instruction}));
-
-    wire [REG_ADDRESS_SIZE-1:0] D_r1;
-    wire [REG_ADDRESS_SIZE-1:0] D_r2;
-    wire [REG_ADDRESS_SIZE-1:0] D_rd;
-    wire [ADDRESS_SIZE-1:0] D_Immediate;
-    wire D_We;
-    wire D_Ie;
-    wire D_Op;
-    wire D_branch;
-    wire [ADDRESS_SIZE-1:0] D_branch_immediate;
-
-    D decoder(
-        .D_instruction(D_instruction),
-        .D_pc(D_pc),
-        .D_addr_r1(D_r1),
-        .D_addr_r2(D_r2),
-        .D_addr_rd(D_rd),
-        .D_We(D_We),
-        .D_immediate(D_Immediate),
-        .D_Ie(D_Ie),
-        .D_op(D_Op),
-        .D_branch(D_branch),
-        .D_branch_immediate(D_branch_immediate),
-        .D_stall(D_stall),
-        .D_stall_in(DM_stall));
-
-    wire [REG_ADDRESS_SIZE-1:0] DM_r1;
-    wire [REG_ADDRESS_SIZE-1:0] DM_r2;
-    wire [REG_ADDRESS_SIZE-1+3 + ADDRESS_SIZE:0] DM_static_in;
-    wire [ADDRESS_SIZE-1:0] DM_Immediate;
-    wire DM_Ie;
-
-    FF #(83) D_DM(
-        .reset(reset),
-        .erase(D_stall || PC_clear),
         .stall(DM_stall),
-        .write(clk),
-        .in({D_Immediate, D_Ie, D_r2, D_r1, D_Op, D_branch_immediate, D_rd, D_We, D_branch}),
-        .out({DM_Immediate, DM_Ie, DM_r2, DM_r1, DM_static_in}));
+        .in({PC_current, I_instruction}),
+        .out({DM_pc, DM_instruction}));
+
 
     wire [REG_ADDRESS_SIZE-1:0] DM_rd;
     wire [ADDRESS_SIZE-1:0] DM_value;
@@ -116,21 +77,18 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     DM dm(
         .clk(clk),
         .reset(reset),
-        .DM_addr_r1(DM_r1),
-        .DM_addr_r2(DM_r2),
-        .DM_addr_rd(DM_rd),
-        .DM_rd(DM_value),
+        .DM_pc(DM_pc),
+        .DM_instruction(DM_instruction),
+        .DM_Wat(DM_rd),
+        .DM_Wvalue(DM_value),
         .DM_We(DM_We),
-        .DM_immediate(DM_Immediate),
-        .DM_Ie(DM_Ie),
         .DM_operand1(DM_operand1),
         .DM_operand2(DM_operand2),
-        .DM_static_in(DM_static_in),
-        .DM_static_out(DM_static_out),
         .ALU_d(ALU_d),
         .ALU_bypass(ALU_bypass),
         .DM_W_d(DM_W_d),
         .DM_W_bypass(DM_W_bypass),
+        .DM_static_out(DM_static_out),
         .DM_stall(DM_stall));
 
     wire ALU_op;

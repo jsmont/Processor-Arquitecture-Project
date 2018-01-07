@@ -12,7 +12,7 @@ module PC #(parameter ADDRESS_SIZE=32, INSTRUCTION_SIZE=4) (
         PC_conditional? 
         PC_result == 0? PC_current + PC_Immediate
         : PC_current +4
-        : (PC_Immediate-4 + PC_result) & 32'hfffffff6
+        : (PC_Immediate-4 + PC_result) & 32'hfffffffc
         : PC_current + 4;
 
     assign PC_clear = PC_branch && (!PC_conditional || (PC_conditional && PC_result == 0));
