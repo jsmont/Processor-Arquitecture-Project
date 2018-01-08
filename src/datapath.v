@@ -136,5 +136,24 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     assign PC_result = DM_result;
 
     assign PC_conditional = PC_branch && ! DM_We;
+ 
+    wire [ADDRESS_SIZE-1:0] DM_M_operand1;
+    wire [ADDRESS_SIZE-1:0] DM_M_operand2;
+    wire [REG_ADDRESS_SIZE-1:0] DM_M_rd;
+    wire DM_M_write;
+
+    wire [ADDRESS_SIZE-1:0] M1_operand1;
+    wire [ADDRESS_SIZE-1:0] M1_operand2;
+
+    wire [REG_ADDRESS_SIZE+1-1:0] M1_static;
+
+    FF #(70) DM_M1(
+        .in({DM_M_operand2, DM_M_operand1, DM_M_rd, DM_M_write}),
+        .out({M1_operand2, M1_operand2, M1_static}),
+        .write(clk),
+        .reset(reset),
+        .erase(DM_stall || PC_clear),
+        .stall(M1_stall),
+
 
 endmodule
