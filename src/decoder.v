@@ -6,11 +6,18 @@ module Decoder #(parameter ADDRESS_SIZE=32, REG_ADDRESS_SIZE=5)(
     output [REG_ADDRESS_SIZE-1:0] D_addr_r2,
 
     output D_We,
+    output D_op,
 
     output [ADDRESS_SIZE-1:0] D_immediate,
     output D_Ie,
 
-    output [ADDRESS_SIZE+REG_ADDRESS_SIZE+3-1:0] D_static);
+    output [REG_ADDRESS_SIZE-1:0] D_dest,
+    output D_b,
+    output [ADDRESS_SIZE-1:0] D_bImmediate,
+    output is_mul,
+    output is_alu);
+
+
 
     parameter [6:0] RR=7'b0110011;
     parameter [6:0] IR=7'b0010011;
@@ -28,7 +35,7 @@ module Decoder #(parameter ADDRESS_SIZE=32, REG_ADDRESS_SIZE=5)(
 
     assign D_addr_r1 = D_instruction[19:15];
     assign D_addr_r2 = D_instruction[24:20];
-    assign D_addr_rd = D_instruction[11:7];
+    assign D_dest = D_instruction[11:7];
 
     
 
@@ -56,16 +63,21 @@ module Decoder #(parameter ADDRESS_SIZE=32, REG_ADDRESS_SIZE=5)(
         :(D_instruction[6:0] == B)? 1
         :0;
 
-    assign D_branch =
+    assign D_b =
         (D_instruction[6:0] == J)? 1'b1
         :(D_instruction[6:0] == B)? 1'b1
         : 0;
 
-    assign D_branch_immediate =
+    assign D_bImmediate =
         (D_instruction[6:0] == J)? D_pc+4
         :(D_instruction[6:0] == B)? D_immediate
         :0;
 
-    assign D_static = { D_op, D_branch_immediate, D_addr_rd, D_We, D_branch };
+    assign is_alu = 
+        D_instruction[6:0] == RR && D_instruction[25]? 0
+        : 1;
+
+    assign is_mul = D_instruction[6:0] == RR && D_instruction[25];
+                                                    
 
 endmodule
