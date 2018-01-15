@@ -25,7 +25,19 @@ module DM #(parameter REG_ADDRESS_SIZE=5, REG_SIZE=32, ADDRESS_SIZE=32, ID_SIZE=
     input DM_rob_stall,
 
     output DM_stall,
-    output [ID_SIZE-1:0] DM_tail);
+    output [ID_SIZE-1:0] DM_tail,
+    
+    output [REG_ADDRESS_SIZE-1:0] DM_dAddr1,
+    input DM_dependency1,
+    input DM_resolved1,
+    input [REG_SIZE-1:0] DM_dValue1,
+    output [REG_ADDRESS_SIZE-1:0] DM_dAddr2,
+    input DM_dependency2,
+    input DM_resolved2,
+    input [REG_SIZE-1:0] DM_dValue2,
+
+    input DM_take_branch
+    );
 
     wire [REG_SIZE-1:0] data_out1;
     wire [REG_SIZE-1:0] data_out2;
@@ -43,7 +55,7 @@ module DM #(parameter REG_ADDRESS_SIZE=5, REG_SIZE=32, ADDRESS_SIZE=32, ID_SIZE=
     reg [ID_SIZE-1:0] tail = 0;
 
     always @(posedge clk)
-        #1 tail = DM_stall? tail : tail+1; 
+        #1 tail = DM_stall || DM_take_branch? tail : tail+1; 
 
     assign DM_tail = tail;
 
@@ -72,6 +84,9 @@ Decoder d(
         .addr_out2(DM_addr_r2),
         .data_out1(data_out1),
         .data_out2(data_out2));
+
+    assign DM_dAddr1 = DM_addr_r1;
+    assign DM_dAddr2 = DM_addr_r2;
 
 /*
     assign DM_operand1 = 
@@ -103,10 +118,21 @@ Decoder d(
         :0;
 
 */
-    assign DM_operand1 = data_out1;
-    assign DM_operand2 = DM_Ie? DM_immediate :  data_out2;
-    assign DM_stall = DM_rob_stall || (is_mul && DM_mul_stall) || (is_alu && DM_alu_stall);
-    assign DM_use_alu = is_alu;
-    assign DM_use_mul = is_mul;
+
+    assign DM_operand1 =
+        DM_dependency1? DM_dValue1
+        : DM_Wat == DM_addr_r1? DM_Wvalue
+        : data_out1;
+
+    assign DM_operand2 =
+        DM_Ie? DM_immediate
+        : DM_dependency2? DM_dValue2
+        : DM_Wat == DM_addr_r2? DM_Wvalue
+        : data_out2;
+
+
+    assign DM_stall = !DM_take_branch & (DM_rob_stall || (is_mul && DM_mul_stall) || (is_alu && DM_alu_stall) || (DM_dependency1 && !DM_resolved1) || (DM_dependency2 && !DM_resolved2));
+    assign DM_use_alu = is_alu & !DM_take_branch;
+    assign DM_use_mul = is_mul & !DM_take_branch;
 
 endmodule

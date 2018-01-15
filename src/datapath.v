@@ -1,4 +1,4 @@
-module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'h1000, REG_ADDRESS_SIZE=5, REG_SIZE=32, ID_SIZE=2)(
+module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'h1000, REG_ADDRESS_SIZE=5, REGISTER_SIZE=32, ID_SIZE=2)(
     input reset,
     input clk);
 
@@ -9,8 +9,8 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
 
     // BYPASSES
 
-    wire [ADDRESS_SIZE-1: 0] ALU_bypass;
-    wire [ADDRESS_SIZE-1: 0] DM_W_bypass;
+    wire [5:0][REGISTER_SIZE+REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] dep_available;
+    wire [3:0][REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] dep_unavailable;
 
     wire zero;
 
@@ -74,6 +74,15 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     wire DM_b, DM_w, DM_use_alu, DM_use_mul;
     wire [ADDRESS_SIZE-1:0] DM_bImmediate;
     wire [ID_SIZE-1:0] DM_tail;
+    wire [REG_ADDRESS_SIZE-1:0] DM_dAddr1;
+    wire [REG_ADDRESS_SIZE-1:0] DM_dAddr2;
+
+    wire [REGISTER_SIZE-1:0] DM_dValue1;
+    wire DM_dependency1;
+    wire DM_resolved1;
+    wire [REGISTER_SIZE-1:0] DM_dValue2;
+    wire DM_dependency2;
+    wire DM_resolved2;
 
     wire [REG_ADDRESS_SIZE-1+1: 0] ALU_d, DM_W_d;
 
@@ -98,7 +107,16 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .DM_mul_stall(M1_stall),
         .DM_stall(DM_stall),
         .DM_rob_stall(ROB_stall),
-        .DM_tail(DM_tail));
+        .DM_dAddr1(DM_dAddr1),
+        .DM_dAddr2(DM_dAddr2),
+        .DM_dependency1(DM_dependency1),
+        .DM_resolved1(DM_resolved1),
+        .DM_dValue1(DM_dValue1),
+        .DM_dependency2(DM_dependency2),
+        .DM_resolved2(DM_resolved2),
+        .DM_dValue2(DM_dValue2),
+        .DM_tail(DM_tail),
+        .DM_take_branch(PC_clear));
 
     wire ALU_op;
     wire [ADDRESS_SIZE-1:0] ALU_operand1;
@@ -107,13 +125,11 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
 
     FF #(104+ID_SIZE+1) DM_ALU(
         .reset(reset),
-        .erase(DM_stall || PC_clear || !DM_use_alu),
+        .erase(DM_stall || !DM_use_alu),
         .write(clk),
         .stall(ALU_stall),
         .in({DM_operand2, DM_operand1, DM_op, DM_bImmediate, DM_b, DM_dest, DM_w, DM_tail, DM_use_alu}),
         .out({ALU_operand2, ALU_operand1, ALU_op, PC_Immediate, PC_branch, ALU_static}));
-
-    assign ALU_d = ALU_static[REG_ADDRESS_SIZE-1+3:1];
 
     wire [ADDRESS_SIZE-1:0] ALU_result;
     wire [ADDRESS_SIZE-1:0] ALU_value;
@@ -128,12 +144,13 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .ALU_in_use(ALU_static[0]));
 
     assign PC_result = ALU_result;
-    assign PC_conditional = PC_branch && ! ALU_static[5];
+    assign PC_conditional = PC_branch && ! ALU_static[1+ID_SIZE+1-1];
 
     assign ALU_value = PC_branch? PC_Immediate : ALU_result;
+    assign dep_available[0] = { ALU_value, ALU_static[REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0]};
 
     wire [ID_SIZE-1:0] ROB_port1_id;
-    wire [REG_SIZE-1:0] ROB_port1_data;
+    wire [REGISTER_SIZE-1:0] ROB_port1_data;
     wire [REG_ADDRESS_SIZE-1:0] ROB_port1_address;
     wire ROB_port1_write;
     wire ROB_port1_req;
@@ -141,13 +158,14 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     FF #(38+ID_SIZE+1) ALU_ROB(
         .reset(reset),
         .write(clk),
-        .erase(PC_clear),
+        .erase(ALU_stall),
         .stall(ROB_port1_stall),
         .in({ ALU_result, ALU_static}),
         .out({ROB_port1_data, ROB_port1_address, ROB_port1_write, ROB_port1_id, ROB_port1_req}));
 
+    assign dep_available[1] = { ROB_port1_data, ROB_port1_address, ROB_port1_write, ROB_port1_id, ROB_port1_req};
     /*   MUL PIPELINE  */
- 
+
     wire [ADDRESS_SIZE-1:0] M1_operand1;
     wire [ADDRESS_SIZE-1:0] M1_operand2;
 
@@ -158,7 +176,7 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .out({M1_operand2, M1_operand1, M1_static}),
         .write(clk),
         .reset(reset),
-        .erase(DM_stall || PC_clear || !DM_use_mul),
+        .erase(DM_stall || !DM_use_mul),
         .stall(M1_stall));
 
     wire [ADDRESS_SIZE-1:0] M1_result1;
@@ -184,7 +202,7 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .out({M2_operand2, M2_operand1, M2_static}),
         .write(clk),
         .reset(reset),
-        .erase(M1_stall || PC_clear),
+        .erase(M1_stall),
         .stall(M1_stall));
 
     wire [ADDRESS_SIZE-1:0] M2_result1;
@@ -209,7 +227,7 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .out({M3_operand2, M3_operand1, M3_static}),
         .write(clk),
         .reset(reset),
-        .erase(M2_stall || PC_clear ),
+        .erase(M2_stall),
         .stall(M3_stall));
 
     wire [ADDRESS_SIZE-1:0] M3_result1;
@@ -234,7 +252,7 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .out({M4_operand2, M4_operand1, M4_static}),
         .write(clk),
         .reset(reset),
-        .erase(M3_stall || PC_clear),
+        .erase(M3_stall),
         .stall(M4_stall));
 
     wire [ADDRESS_SIZE-1:0] M4_result1;
@@ -248,6 +266,8 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .M1_stall(M4_stall),
         .M1_in_use(M4_static[0])
         );
+
+
     wire [ADDRESS_SIZE-1:0] M5_operand1;
     wire [ADDRESS_SIZE-1:0] M5_operand2;
     wire [REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] M5_static;
@@ -257,7 +277,7 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .out({M5_operand1, M5_operand2, M5_static}),
         .write(clk),
         .reset(reset),
-        .erase(M4_stall || PC_clear),
+        .erase(M4_stall),
         .stall(M5_stall));
 
     wire [ADDRESS_SIZE-1:0] M5_result;
@@ -271,22 +291,26 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .M5_in_use(M5_static[0]));
 
     wire [ID_SIZE-1:0] ROB_port2_id;
-    wire [REG_SIZE-1:0] ROB_port2_data;
+    wire [REGISTER_SIZE-1:0] ROB_port2_data;
     wire [REG_ADDRESS_SIZE-1:0] ROB_port2_address;
     wire ROB_port2_write;
     wire ROB_port2_req;
+
+    assign dep_available[2] = { M5_result, M5_static[REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0]};
 
     FF #(38 + ID_SIZE +1) M5_ROB(
         .in({M5_result, M5_static}),
         .out({ROB_port2_data, ROB_port2_address, ROB_port2_write, ROB_port2_id, ROB_port2_req}),
         .write(clk),
         .reset(reset),
-        .erase(M5_stall || PC_clear),
+        .erase(M5_stall),
         .stall(ROB_port2_stall));
 
     wire [REG_ADDRESS_SIZE-1:0] ROB_address;
-    wire [REG_SIZE-1:0] ROB_data;
+    wire [REGISTER_SIZE-1:0] ROB_data;
     wire ROB_We;
+
+    assign dep_available[3] = { ROB_port2_data, ROB_port2_address, ROB_port2_write, ROB_port2_id, ROB_port2_req};
 
     ROB #(.ID_SIZE(ID_SIZE))RoB(
         .port1_req(ROB_port1_req),
@@ -306,6 +330,10 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .current_address(ROB_address),
         .current_data(ROB_data),
         .current_write(ROB_We),
+        .dep_addr1(DM_dAddr1),
+        .dep_addr2(DM_dAddr2),
+        .dep_out1(dep_available[5]),
+        .dep_out2(dep_available[4]),
         .clk(clk),
         .reset(reset));
 
@@ -316,5 +344,41 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .reset(reset),
         .erase(1'b0),
         .stall(1'b0));
+
+    assign dep_unavailable = {
+        M1_static,
+        M2_static,
+        M3_static,
+        M4_static};
+
+    Dependencies #(
+        .N_AVAILABLE(6),
+        .N_UNAVAILABLE(4),
+        .REG_ADDRESS_SIZE(REG_ADDRESS_SIZE),
+        .REGISTER_SIZE(REGISTER_SIZE),
+        .ID_SIZE(ID_SIZE)
+    ) dep1(
+        .available(dep_available),
+        .unavailable(dep_unavailable),
+        .tail(DM_tail),
+        .addr(DM_dAddr1),
+        .dependency(DM_dependency1),
+        .resolved(DM_resolved1),
+        .value(DM_dValue1));
+
+    Dependencies #(
+        .N_AVAILABLE(6),
+        .N_UNAVAILABLE(4),
+        .REG_ADDRESS_SIZE(REG_ADDRESS_SIZE),
+        .REGISTER_SIZE(REGISTER_SIZE),
+        .ID_SIZE(ID_SIZE)
+    ) dep2(
+        .available(dep_available),
+        .unavailable(dep_unavailable),
+        .tail(DM_tail),
+        .addr(DM_dAddr2),
+        .dependency(DM_dependency2),
+        .resolved(DM_resolved2),
+        .value(DM_dValue2));
 
 endmodule

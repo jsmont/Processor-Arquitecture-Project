@@ -19,6 +19,12 @@ module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
     output [REG_ADDRESS_SIZE-1:0]current_address,
     output [REGISTER_SIZE-1:0] current_data,
     output current_write,
+
+    input [REG_ADDRESS_SIZE-1:0] dep_addr1, 
+    input [REG_ADDRESS_SIZE-1:0] dep_addr2, 
+    output [REGISTER_SIZE+REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] dep_out1,
+    output [REGISTER_SIZE+REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] dep_out2,
+
     input clk,
     input reset);
 
@@ -62,6 +68,8 @@ module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
     wire selected_port_req;
     wire selected_port_w;
 
+    wire [(1<<ID_SIZE)-1:0][REGISTER_SIZE+REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] dependence;
+
     generate
         genvar i;
         for(i=0; i < (1<<(ID_SIZE)); i = i+1)
@@ -75,8 +83,46 @@ module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
                 .erase(valid[i] && (head == i)),
                 .reset(reset)
                 );
+
+            assign dependence[i] = { data[i], address[i], we[i], i[ID_SIZE-1:0], valid[i]};
         end
     endgenerate
+
+    Dependencies #(
+        .ID_SIZE(ID_SIZE),
+        .REG_ADDRESS_SIZE(REG_ADDRESS_SIZE),
+        .REGISTER_SIZE(REGISTER_SIZE),
+        .N_AVAILABLE((1<<ID_SIZE)),
+        .N_UNAVAILABLE(0)
+    ) dep1(
+        .available(dependence),
+        .tail(tail),
+        .addr(dep_addr1),
+        .dependency(dep_out1[0]),
+        .resolved(dep_out1[ID_SIZE+1+1-1]),
+        .value(dep_out1[REGISTER_SIZE+REG_ADDRESS_SIZE+1+ID_SIZE+1-1:REG_ADDRESS_SIZE+1+ID_SIZE+1])
+        );
+
+    assign dep_out1[ID_SIZE+1-1:1] = tail+1;
+    assign dep_out1[REG_ADDRESS_SIZE+1+ID_SIZE+1-1:1+ID_SIZE+1] = dep_addr1;
+
+    Dependencies #(
+        .ID_SIZE(ID_SIZE),
+        .REG_ADDRESS_SIZE(REG_ADDRESS_SIZE),
+        .REGISTER_SIZE(REGISTER_SIZE),
+        .N_AVAILABLE((1<<ID_SIZE)),
+        .N_UNAVAILABLE(0)
+    ) dep2(
+        .available(dependence),
+        .tail(tail),
+        .addr(dep_addr2),
+        .dependency(dep_out2[0]),
+        .resolved(dep_out2[ID_SIZE+1+1-1]),
+        .value(dep_out2[REGISTER_SIZE+REG_ADDRESS_SIZE+1+ID_SIZE+1-1:REG_ADDRESS_SIZE+1+ID_SIZE+1])
+        );
+
+    assign dep_out2[ID_SIZE+1-1:1] = tail+1;
+    assign dep_out2[REG_ADDRESS_SIZE+1+ID_SIZE+1-1:1+ID_SIZE+1] = dep_addr2;
 
     assign selected_port_data =
         selected_port? port2_data

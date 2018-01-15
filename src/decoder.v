@@ -70,7 +70,7 @@ module Decoder #(parameter ADDRESS_SIZE=32, REG_ADDRESS_SIZE=5)(
 
     assign D_bImmediate =
         (D_instruction[6:0] == J)? D_pc+4
-        :(D_instruction[6:0] == B)? D_immediate
+        :(D_instruction[6:0] == B)? D_immediate+D_pc
         :0;
 
     assign is_alu = 
