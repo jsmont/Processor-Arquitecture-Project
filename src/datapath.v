@@ -1,4 +1,4 @@
-module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'h1000, REG_ADDRESS_SIZE=5)(
+module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'h1000, REG_ADDRESS_SIZE=5, REG_SIZE=32, ID_SIZE=2)(
     input reset,
     input clk);
 
@@ -65,24 +65,25 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .out({DM_pc, DM_instruction}));
 
 
-    wire [REG_ADDRESS_SIZE-1:0] DM_rd;
-    wire [ADDRESS_SIZE-1:0] DM_value;
+    wire [REG_ADDRESS_SIZE-1:0] DM_Wat;
+    wire [ADDRESS_SIZE-1:0] DM_Wvalue;
     wire DM_We, DM_op;
     wire [ADDRESS_SIZE-1:0] DM_operand1;
     wire [ADDRESS_SIZE-1:0] DM_operand2;
     wire [REG_ADDRESS_SIZE-1:0] DM_dest;
     wire DM_b, DM_w, DM_use_alu, DM_use_mul;
     wire [ADDRESS_SIZE-1:0] DM_bImmediate;
+    wire [ID_SIZE-1:0] DM_tail;
 
     wire [REG_ADDRESS_SIZE-1+1: 0] ALU_d, DM_W_d;
 
-    DM dm(
+    DM #(.ID_SIZE(ID_SIZE)) dm(
         .clk(clk),
         .reset(reset),
         .DM_pc(DM_pc),
         .DM_instruction(DM_instruction),
-        .DM_Wat(DM_rd),
-        .DM_Wvalue(DM_value),
+        .DM_Wat(DM_Wat),
+        .DM_Wvalue(DM_Wvalue),
         .DM_We(DM_We),
         .DM_operand1(DM_operand1),
         .DM_operand2(DM_operand2),
@@ -95,66 +96,65 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .DM_use_alu(DM_use_alu),
         .DM_alu_stall(ALU_stall),
         .DM_mul_stall(M1_stall),
-        .DM_stall(DM_stall));
+        .DM_stall(DM_stall),
+        .DM_rob_stall(ROB_stall),
+        .DM_tail(DM_tail));
 
     wire ALU_op;
     wire [ADDRESS_SIZE-1:0] ALU_operand1;
     wire [ADDRESS_SIZE-1:0] ALU_operand2;
-    wire [REG_ADDRESS_SIZE-1+2+ADDRESS_SIZE:0] ALU_static;
+    wire [REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] ALU_static;
 
-    FF #(104) DM_ALU(
+    FF #(104+ID_SIZE+1) DM_ALU(
         .reset(reset),
         .erase(DM_stall || PC_clear || !DM_use_alu),
         .write(clk),
         .stall(ALU_stall),
-        .in({DM_operand2, DM_operand1, DM_bImmediate, DM_op, DM_dest, DM_w, DM_b}),
-        .out({ALU_operand2, ALU_operand1, ALU_op, ALU_static}));
+        .in({DM_operand2, DM_operand1, DM_op, DM_bImmediate, DM_b, DM_dest, DM_w, DM_tail, DM_use_alu}),
+        .out({ALU_operand2, ALU_operand1, ALU_op, PC_Immediate, PC_branch, ALU_static}));
 
     assign ALU_d = ALU_static[REG_ADDRESS_SIZE-1+3:1];
 
     wire [ADDRESS_SIZE-1:0] ALU_result;
+    wire [ADDRESS_SIZE-1:0] ALU_value;
 
     ALU Alu(
         .ALU_op(ALU_op),
         .ALU_operand1(ALU_operand1),
         .ALU_operand2(ALU_operand2),
         .ALU_result(ALU_result),
-        .ALU_stall_in(1'b0),
+        .ALU_stall_in(ROB_port1_stall),
         .ALU_stall(ALU_stall),
-        .ALU_in_use(ALU_static[0] || ALU_static[1]));
+        .ALU_in_use(ALU_static[0]));
 
-    assign ALU_bypass = ALU_result;
+    assign PC_result = ALU_result;
+    assign PC_conditional = PC_branch && ! ALU_static[5];
 
-    wire [ADDRESS_SIZE-1:0] DM_result;
+    assign ALU_value = PC_branch? PC_Immediate : ALU_result;
 
-    FF #(71) ALU_DM(
+    wire [ID_SIZE-1:0] ROB_port1_id;
+    wire [REG_SIZE-1:0] ROB_port1_data;
+    wire [REG_ADDRESS_SIZE-1:0] ROB_port1_address;
+    wire ROB_port1_write;
+    wire ROB_port1_req;
+
+    FF #(38+ID_SIZE+1) ALU_ROB(
         .reset(reset),
         .write(clk),
         .erase(PC_clear),
-        .stall(1'b0),
+        .stall(ROB_port1_stall),
         .in({ ALU_result, ALU_static}),
-        .out({ DM_result, PC_Immediate, DM_rd, DM_We, PC_branch}));
+        .out({ROB_port1_data, ROB_port1_address, ROB_port1_write, ROB_port1_id, ROB_port1_req}));
 
-    assign DM_W_d = {DM_rd, DM_We};
-    assign DM_W_bypass = DM_result;
-
-    assign DM_value = PC_branch? PC_Immediate : DM_result;
-    assign PC_result = DM_result;
-
-    assign PC_conditional = PC_branch && ! DM_We;
+    /*   MUL PIPELINE  */
  
-    wire [ADDRESS_SIZE-1:0] DM_M_operand1;
-    wire [ADDRESS_SIZE-1:0] DM_M_operand2;
-    wire [REG_ADDRESS_SIZE-1:0] DM_M_rd;
-    wire DM_M_write;
-
     wire [ADDRESS_SIZE-1:0] M1_operand1;
     wire [ADDRESS_SIZE-1:0] M1_operand2;
 
-    wire [REG_ADDRESS_SIZE+1-1:0] M1_static;
+    wire [REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] M1_static;
 
-    FF #(70) DM_M1(
-        .in({DM_operand2, DM_operand1, DM_dest, DM_w}),
+    FF #(70+ID_SIZE+1) DM_M1(
+        .in({DM_operand2, DM_operand1, DM_dest, DM_w, DM_tail, DM_use_mul}),
         .out({M1_operand2, M1_operand1, M1_static}),
         .write(clk),
         .reset(reset),
@@ -177,9 +177,9 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     wire [ADDRESS_SIZE-1:0] M2_operand1;
     wire [ADDRESS_SIZE-1:0] M2_operand2;
 
-    wire [REG_ADDRESS_SIZE+1-1:0] M2_static;
+    wire [REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] M2_static;
 
-    FF #(70) M1_M2(
+    FF #(70+ID_SIZE+1) M1_M2(
         .in({M1_result2, M1_result1, M1_static}),
         .out({M2_operand2, M2_operand1, M2_static}),
         .write(clk),
@@ -202,9 +202,9 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     wire [ADDRESS_SIZE-1:0] M3_operand1;
     wire [ADDRESS_SIZE-1:0] M3_operand2;
 
-    wire [REG_ADDRESS_SIZE+1-1:0] M3_static;
+    wire [REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] M3_static;
 
-    FF #(70) M2_M3(
+    FF #(70+ID_SIZE+1) M2_M3(
         .in({M2_result2, M2_result1, M2_static}),
         .out({M3_operand2, M3_operand1, M3_static}),
         .write(clk),
@@ -227,9 +227,9 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
     wire [ADDRESS_SIZE-1:0] M4_operand1;
     wire [ADDRESS_SIZE-1:0] M4_operand2;
 
-    wire [REG_ADDRESS_SIZE+1-1:0] M4_static;
+    wire [REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] M4_static;
 
-    FF #(70) M3_M4(
+    FF #(70+ID_SIZE+1) M3_M4(
         .in({M3_result1, M3_result2, M3_static}),
         .out({M4_operand2, M4_operand1, M4_static}),
         .write(clk),
@@ -250,9 +250,9 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         );
     wire [ADDRESS_SIZE-1:0] M5_operand1;
     wire [ADDRESS_SIZE-1:0] M5_operand2;
-    wire [REG_ADDRESS_SIZE+1-1:0] M5_static;
+    wire [REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] M5_static;
 
-    FF#(70) M4_M5(
+    FF#(70+ID_SIZE+1) M4_M5(
         .in({M4_result1, M4_result2, M4_static}),
         .out({M5_operand1, M5_operand2, M5_static}),
         .write(clk),
@@ -266,8 +266,55 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .M5_operand1(M5_operand1),
         .M5_operand2(M5_operand2),
         .M5_result(M5_result),
-        .M5_stall_in(1'b0),
+        .M5_stall_in(ROB_port2_stall),
         .M5_stall(M5_stall),
         .M5_in_use(M5_static[0]));
+
+    wire [ID_SIZE-1:0] ROB_port2_id;
+    wire [REG_SIZE-1:0] ROB_port2_data;
+    wire [REG_ADDRESS_SIZE-1:0] ROB_port2_address;
+    wire ROB_port2_write;
+    wire ROB_port2_req;
+
+    FF #(38 + ID_SIZE +1) M5_ROB(
+        .in({M5_result, M5_static}),
+        .out({ROB_port2_data, ROB_port2_address, ROB_port2_write, ROB_port2_id, ROB_port2_req}),
+        .write(clk),
+        .reset(reset),
+        .erase(M5_stall || PC_clear),
+        .stall(ROB_port2_stall));
+
+    wire [REG_ADDRESS_SIZE-1:0] ROB_address;
+    wire [REG_SIZE-1:0] ROB_data;
+    wire ROB_We;
+
+    ROB #(.ID_SIZE(ID_SIZE))RoB(
+        .port1_req(ROB_port1_req),
+        .port1_id(ROB_port1_id),
+        .port1_address(ROB_port1_address),
+        .port1_data(ROB_port1_data),
+        .port1_w(ROB_port1_write),
+        .port1_stall(ROB_port1_stall),
+        .port2_req(ROB_port2_req),
+        .port2_id(ROB_port2_id),
+        .port2_address(ROB_port2_address),
+        .port2_data(ROB_port2_data),
+        .port2_w(ROB_port2_write),
+        .port2_stall(ROB_port2_stall),
+        .tail(DM_tail),
+        .assignment_stall(ROB_stall),
+        .current_address(ROB_address),
+        .current_data(ROB_data),
+        .current_write(ROB_We),
+        .clk(clk),
+        .reset(reset));
+
+    FF #(38) ROB_DM(
+        .in({ROB_data, ROB_address, ROB_We}),
+        .out({DM_Wvalue, DM_Wat, DM_We}),
+        .write(clk),
+        .reset(reset),
+        .erase(1'b0),
+        .stall(1'b0));
 
 endmodule

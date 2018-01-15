@@ -1,0 +1,287 @@
+$date
+	Sun Jan 14 02:19:10 2018
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module test $end
+$var wire 1 ! tail $end
+$var wire 1 " port2_stall $end
+$var wire 1 # port1_stall $end
+$var reg 1 $ clk $end
+$var reg 5 % port1_address [4:0] $end
+$var reg 32 & port1_data [31:0] $end
+$var reg 1 ' port1_id $end
+$var reg 1 ( port1_req $end
+$var reg 1 ) port1_w $end
+$var reg 5 * port2_address [4:0] $end
+$var reg 32 + port2_data [31:0] $end
+$var reg 1 , port2_id $end
+$var reg 1 - port2_req $end
+$var reg 1 . port2_w $end
+$var reg 1 / reset $end
+$scope module rob $end
+$var wire 1 0 assignment_stall $end
+$var wire 1 $ clk $end
+$var wire 5 1 current_address [4:0] $end
+$var wire 32 2 current_data [31:0] $end
+$var wire 1 3 current_write $end
+$var wire 5 4 port1_address [4:0] $end
+$var wire 32 5 port1_data [31:0] $end
+$var wire 1 ' port1_id $end
+$var wire 1 ( port1_req $end
+$var wire 1 # port1_stall $end
+$var wire 1 ) port1_w $end
+$var wire 5 6 port2_address [4:0] $end
+$var wire 32 7 port2_data [31:0] $end
+$var wire 1 , port2_id $end
+$var wire 1 - port2_req $end
+$var wire 1 " port2_stall $end
+$var wire 1 . port2_w $end
+$var wire 1 / reset $end
+$var wire 1 ! tail $end
+$var wire 2 8 we [1:0] $end
+$var wire 2 9 valid [1:0] $end
+$var wire 1 : selected_port_w $end
+$var wire 1 ; selected_port_req $end
+$var wire 1 < selected_port_id $end
+$var wire 32 = selected_port_data [31:0] $end
+$var wire 5 > selected_port_address [4:0] $end
+$var wire 1 ? selected_port $end
+$var reg 1 @ empty $end
+$var reg 1 A head $end
+$scope function compare_ids $end
+$var reg 1 B compare_ids $end
+$var reg 1 C head $end
+$var reg 1 D id1 $end
+$var reg 1 E id2 $end
+$upscope $end
+$scope begin genblk1[0] $end
+$scope module slot $end
+$var wire 1 F erase $end
+$var wire 39 G in [38:0] $end
+$var wire 39 H out [38:0] $end
+$var wire 1 / reset $end
+$var wire 1 I stall $end
+$var wire 1 $ write $end
+$var reg 39 J data [38:0] $end
+$upscope $end
+$upscope $end
+$scope begin genblk1[1] $end
+$scope module slot $end
+$var wire 1 K erase $end
+$var wire 39 L in [38:0] $end
+$var wire 39 M out [38:0] $end
+$var wire 1 / reset $end
+$var wire 1 N stall $end
+$var wire 1 $ write $end
+$var reg 39 O data [38:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+b0 O
+1N
+b0 M
+bx1 L
+0K
+b0 J
+1I
+b0 H
+bx1 G
+0F
+xE
+xD
+0C
+xB
+0A
+1@
+1?
+bx >
+bx =
+x<
+0;
+x:
+b0 9
+b0 8
+bx 7
+bx 6
+bx 5
+bx 4
+03
+b0 2
+b0 1
+00
+1/
+x.
+0-
+x,
+bx +
+bx *
+x)
+0(
+x'
+bx &
+bx %
+0$
+0#
+0"
+z!
+$end
+#10
+1$
+#20
+0$
+0/
+#30
+1$
+#40
+0N
+b1 =
+1<
+1:
+1;
+b10000111 G
+b10000111 L
+b1 >
+0?
+0#
+1D
+0$
+b1 &
+b1 5
+b1 %
+b1 4
+1(
+1)
+1'
+#50
+1$
+#51
+b10 9
+b10 8
+b10000111 M
+b10000111 O
+#60
+0$
+#70
+1$
+#80
+0I
+0<
+0:
+b10000001 G
+b10000001 L
+b0 >
+1?
+1N
+0"
+0B
+0E
+1;
+0$
+b1 +
+b1 7
+b0 *
+b0 6
+0.
+1-
+0,
+0(
+#90
+1$
+#91
+1F
+b11 9
+b1 2
+b10000001 H
+b10000001 J
+#100
+0$
+#110
+1B
+1C
+13
+0F
+1K
+b1 1
+1A
+x0
+0@
+1$
+#111
+b10 9
+b0 H
+b0 J
+#120
+1I
+0N
+1<
+1:
+b10000111 G
+b10000111 L
+b1 >
+1"
+0?
+0#
+0$
+1(
+#130
+0I
+1N
+0<
+0:
+b10000001 G
+b10000001 L
+b0 >
+1#
+0"
+1?
+0B
+0C
+03
+0K
+b0 1
+b0 2
+0A
+1$
+#131
+b0 9
+b0 8
+b0 M
+b0 O
+#140
+0$
+#150
+1$
+#151
+1F
+b1 9
+b1 2
+b10000001 H
+b10000001 J
+#160
+0$
+#170
+1I
+0N
+1<
+1:
+b10000111 G
+b10000111 L
+b1 >
+0#
+1"
+0?
+1B
+1C
+0F
+b0 2
+1A
+1$
