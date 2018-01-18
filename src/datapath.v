@@ -103,8 +103,10 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .DM_w(DM_w),
         .DM_use_mul(DM_use_mul),
         .DM_use_alu(DM_use_alu),
+        .DM_use_mem(DM_use_mem),
         .DM_alu_stall(ALU_stall),
         .DM_mul_stall(M1_stall),
+        .DM_mem_stall(AT_stall),
         .DM_stall(DM_stall),
         .DM_rob_stall(ROB_stall),
         .DM_dAddr1(DM_dAddr1),
@@ -312,6 +314,93 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
 
     assign dep_available[3] = { ROB_port2_data, ROB_port2_address, ROB_port2_write, ROB_port2_id, ROB_port2_req};
 
+    /*         MEM PIPELINE          */
+
+    wire [REGISTER_SIZE-1:0] AT_value;
+    wire [REGISTER_SIZE-1:0] AT_offset;
+    wire [REGISTER_SIZE-1:0] AT_base;
+
+    wire [REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] AT_static;
+
+
+    FF #(102+ID_SIZE+1) DM_AT(
+        .in({DM_bImmediate, DM_operand2, DM_operand1, DM_dest, DM_w, DM_tail, DM_use_mem}),
+        .out({AT_value, AT_offset, AT_base, AT_static}),
+        .write(clk),
+        .reset(reset),
+        .erase(DM_stall || !DM_use_mem),
+        .stall(AT_stall)
+        );
+
+    wire [ADDRESS_SIZE-1:0] AT_address;
+
+    AT at(
+        .AT_operand1(AT_base),
+        .AT_operand2(AT_offset),
+        .AT_address(AT_address),
+        .AT_stall(AT_stall),
+        .AT_stall_in(DMEM_stall_load),
+        .AT_in_use(AT_static[0]));
+
+    wire [ADDRESS_SIZE-1:0] DMEM_load_address;
+    wire [ADDRESS_SIZE-1:0] DMEM_dest;
+    wire [REGISTER_SIZE-1:0] DMEM_value;
+    wire [REGISTER_SIZE-1:0] DMEM_result;
+    wire [REGISTER_SIZE-1:0] DMEM_output;
+    wire [REG_ADDRESS_SIZE-1:0] DMEM_rd;
+    wire DMEM_s;
+    wire [ID_SIZE-1:0] DMEM_load_id;
+    wire DMEM_load_valid;
+
+    FF #(70+ID_SIZE+1) AT_DMEM(
+        .in({AT_value, AT_address, AT_static}),
+        .out({DMEM_value, DMEM_load_address, DMEM_rd, DMEM_s, DMEM_load_id, DMEM_load_valid}),
+        .write(clk),
+        .reset(reset),
+        .erase(AT_stall),
+        .stall(DMEM_stall_load)
+        );
+
+    wire [ADDRESS_SIZE-1:0] ROB_store_address;
+    wire [REGISTER_SIZE-1:0] ROB_store_value;
+    wire ROB_store_req;
+
+    wire [ID_SIZE-1:0] ROB_head;
+
+    Dmem #(
+        .ID_SIZE(ID_SIZE)
+    ) dmem(
+        .load_address(DMEM_load_address),
+        .load_req(DMEM_load_valid),
+        .stall_load(DMEM_stall_load),
+        .load_value(DMEM_output),
+        .head(ROB_head),
+        .load_id(DMEM_load_id),
+        .store_address(ROB_store_address),
+        .store_req(ROB_store_req),
+        .store_value(ROB_store_value),
+        .stall_store(ROB_stall_store),
+        .stall_in(ROB_port3_stall)
+        );
+
+    assign DMEM_dest = DMEM_s? DMEM_load_address : DMEM_rd;
+    assign DMEM_result = DMEM_s? DMEM_value : DMEM_output;
+
+    wire [REGISTER_SIZE-1:0] ROB_port3_data;
+    wire [ADDRESS_SIZE-1:0] ROB_port3_address;
+    wire ROB_port3_s;
+    wire [ID_SIZE-1:0] ROB_port3_id;
+    wire ROB_port3_req;
+
+    FF #(65+ID_SIZE+1) DMEM_ROB(
+        .in({DMEM_result, DMEM_dest, DMEM_s, DMEM_load_id, DMEM_load_valid}),
+        .out({ROB_port3_data, ROB_port3_address, ROB_port3_s, ROB_port3_id, ROB_port3_req}),
+        .write(clk),
+        .reset(reset),
+        .erase(DMEM_stall_load),
+        .stall(ROB_port3_stall)
+        );
+
     ROB #(.ID_SIZE(ID_SIZE))RoB(
         .port1_req(ROB_port1_req),
         .port1_id(ROB_port1_id),
@@ -325,11 +414,22 @@ module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'
         .port2_data(ROB_port2_data),
         .port2_w(ROB_port2_write),
         .port2_stall(ROB_port2_stall),
+        .port3_data(ROB_port3_data),
+        .port3_address(ROB_port3_address),
+        .port3_s(ROB_port3_s),
+        .port3_id(ROB_port3_id),
+        .port3_req(ROB_port3_req),
+        .port3_stall(ROB_port3_stall),
         .tail(DM_tail),
+        .ROB_head(ROB_head),
         .assignment_stall(ROB_stall),
         .current_address(ROB_address),
         .current_data(ROB_data),
         .current_write(ROB_We),
+        .store_address(ROB_store_address),
+        .store_data(ROB_store_value),
+        .store_req(ROB_store_req),
+        .store_stall(ROB_stall_store),
         .dep_addr1(DM_dAddr1),
         .dep_addr2(DM_dAddr2),
         .dep_out1(dep_available[5]),

@@ -1,4 +1,4 @@
-module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
+module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ADDRESS_SIZE=32, ID_SIZE=1)(
 
     input [ID_SIZE-1: 0] port1_id,
     input [REG_ADDRESS_SIZE-1:0] port1_address,
@@ -14,7 +14,15 @@ module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
     input port2_req,
     output port2_stall,
 
+    input [ID_SIZE-1: 0] port3_id,
+    input [ADDRESS_SIZE-1:0] port3_address,
+    input [REGISTER_SIZE-1:0] port3_data,
+    input port3_s,
+    input port3_req,
+    output port3_stall,
+
     input [ID_SIZE-1:0]tail,
+    output [ID_SIZE-1:0]ROB_head,
     output assignment_stall,
     output [REG_ADDRESS_SIZE-1:0]current_address,
     output [REGISTER_SIZE-1:0] current_data,
@@ -25,15 +33,23 @@ module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
     output [REGISTER_SIZE+REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] dep_out1,
     output [REGISTER_SIZE+REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] dep_out2,
 
+    output [ADDRESS_SIZE-1:0] store_address,
+    output [REGISTER_SIZE-1:0] store_data,
+    output store_req,
+    input store_stall,
+
     input clk,
     input reset);
 
     reg [ID_SIZE-1:0]head; 
     reg empty = 1;
 
+    assign ROB_head = head;
+
     wire [REGISTER_SIZE-1:0] data [(1<<ID_SIZE)-1:0];
-    wire [REG_ADDRESS_SIZE-1:0] address [(1<<ID_SIZE)-1:0];
+    wire [ADDRESS_SIZE-1:0] address [(1<<ID_SIZE)-1:0];
     wire [(1<<ID_SIZE)-1:0] we;
+    wire [(1<<ID_SIZE)-1:0] mem;
     wire [(1<<ID_SIZE)-1:0] valid;
 
     // returns id1 < id2
@@ -54,19 +70,35 @@ module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
     endfunction
 
 
-    wire selected_port =
+    wire [1:0] selected_port =
         port1_req?
-        port2_req?
-        compare_ids(port1_id, port2_id, head)? 0
-        : 1
-        : 0
-        : 1;
+            port2_req?
+                compare_ids(port1_id, port2_id, head)? 
+                    port3_req?
+                        compare_ids(port1_id, port3_id, head)? 0
+                        : 2
+                    : 0
+                : port3_req? 
+                    compare_ids(port2_id, port3_id, head)? 1
+                    : 2
+                : 1
+            : port3_req?
+                compare_ids(port1_id, port3_id, head)? 0
+                : 2
+            : 0
+        : port2_req?
+            port3_req?
+                compare_ids(port2_req, port3_req, head)? 1
+                : 2
+            : 1
+        : 2;
 
     wire [REGISTER_SIZE-1: 0] selected_port_data; 
-    wire [REG_ADDRESS_SIZE-1:0] selected_port_address; 
+    wire [ADDRESS_SIZE-1:0] selected_port_address; 
     wire [ID_SIZE-1:0]selected_port_id;
     wire selected_port_req;
     wire selected_port_w;
+    wire selected_port_m;
 
     wire [(1<<ID_SIZE)-1:0][REGISTER_SIZE+REG_ADDRESS_SIZE+1+ID_SIZE+1-1:0] dependence;
 
@@ -75,16 +107,16 @@ module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
         for(i=0; i < (1<<(ID_SIZE)); i = i+1)
         begin
 
-            FF #(REGISTER_SIZE+REG_ADDRESS_SIZE+1+1) slot(
-                .in({selected_port_data, selected_port_address, selected_port_w, 1'b1}),
-                .out({data[i], address[i], we[i], valid[i]}),
+            FF #(REGISTER_SIZE+ADDRESS_SIZE+1+1+1) slot(
+                .in({selected_port_data, selected_port_address, selected_port_w, selected_port_m, 1'b1}),
+                .out({data[i], address[i], we[i], mem[i], valid[i]}),
                 .write(clk),
                 .stall((!selected_port_req || selected_port_id != i) && !(valid[i] && (head == i))),
                 .erase(valid[i] && (head == i)),
                 .reset(reset)
                 );
 
-            assign dependence[i] = { data[i], address[i], we[i], i[ID_SIZE-1:0], valid[i]};
+            assign dependence[i] = { data[i], address[i][REG_ADDRESS_SIZE-1:0], we[i], i[ID_SIZE-1:0], valid[i] & ! mem[i]};
         end
     endgenerate
 
@@ -125,31 +157,41 @@ module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
     assign dep_out2[REG_ADDRESS_SIZE+1+ID_SIZE+1-1:1+ID_SIZE+1] = dep_addr2;
 
     assign selected_port_data =
-        selected_port? port2_data
-        : port1_data;
+        selected_port==1? port2_data
+        : selected_port == 0? port1_data
+        : port3_data;
 
     assign selected_port_id =
-        selected_port? port2_id
-        : port1_id;
+        selected_port==1? port2_id
+        : selected_port==0? port1_id
+        : port3_id;
 
     assign selected_port_w =
-        selected_port? port2_w
-        : port1_w;
+        selected_port==1? port2_w
+        : selected_port==0? port1_w
+        : !port3_s;
 
     assign selected_port_req =
-        selected_port? port2_req
-        : port1_req;
+        selected_port==1? port2_req
+        : selected_port==0? port1_req
+        : port3_req;
 
     assign selected_port_address =
-        selected_port? port2_address
-        : port1_address;
+        selected_port==1? { 27'b0,  port2_address}
+        : selected_port==0? {27'b0, port1_address}
+        : port3_address;
 
+    assign selected_port_m =
+        selected_port==2? port3_s 
+        : 0;
+    
     assign port1_stall = (selected_port != 0) && port1_req;
     assign port2_stall = (selected_port != 1) && port2_req;
+    assign port3_stall = (selected_port != 2) && port3_req;
 
     always @(posedge clk)
     begin
-        if (valid[head])
+        if (valid[head] && !(mem[head] && store_stall))
         begin
             if(head+1 == tail)
             begin
@@ -164,11 +206,14 @@ module ROB #(parameter REGISTER_SIZE=32, REG_ADDRESS_SIZE=5, ID_SIZE=1)(
     always @reset
         head = 0;
 
-    assign current_address = address[head];
+    assign current_address = address[head][REG_ADDRESS_SIZE-1:0];
     assign current_data = data[head];
     assign current_write = we[head] && valid[head];
-
     assign assignment_stall = (head == tail) && !empty;
 
+    assign store_address = address[head];
+    assign store_data = data[head];
+    assign store_req = mem[head]&&valid[head];
+    
 endmodule
 

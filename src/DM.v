@@ -19,9 +19,11 @@ module DM #(parameter REG_ADDRESS_SIZE=5, REG_SIZE=32, ADDRESS_SIZE=32, ID_SIZE=
 
     output DM_use_mul,
     output DM_use_alu,
+    output DM_use_mem,
 
     input DM_alu_stall,
     input DM_mul_stall,
+    input DM_mem_stall,
     input DM_rob_stall,
 
     output DM_stall,
@@ -39,6 +41,8 @@ module DM #(parameter REG_ADDRESS_SIZE=5, REG_SIZE=32, ADDRESS_SIZE=32, ID_SIZE=
     input DM_take_branch
     );
 
+    wire [ADDRESS_SIZE-1:0] D_bImmediate;
+
     wire [REG_SIZE-1:0] data_out1;
     wire [REG_SIZE-1:0] data_out2;
 
@@ -50,6 +54,7 @@ module DM #(parameter REG_ADDRESS_SIZE=5, REG_SIZE=32, ADDRESS_SIZE=32, ID_SIZE=
     wire [REG_SIZE-1:0] DM_immediate;
     wire DM_Ie;
     wire is_alu;
+    wire is_mem;
     wire is_mul;
 
     reg [ID_SIZE-1:0] tail = 0;
@@ -70,8 +75,9 @@ Decoder d(
     .D_Ie(DM_Ie),
     .D_dest(DM_dest),
     .D_b(DM_b),
-    .D_bImmediate(DM_bImmediate),
+    .D_bImmediate(D_bImmediate),
     .is_mul(is_mul),
+    .is_mem(is_mem),
     .is_alu(is_alu));
 
     Register_bank rbank(
@@ -125,14 +131,24 @@ Decoder d(
         : data_out1;
 
     assign DM_operand2 =
-        DM_Ie? DM_immediate
-        : DM_dependency2? DM_dValue2
-        : DM_Wat == DM_addr_r2? DM_Wvalue
-        : data_out2;
+        !is_mem?
+            DM_Ie? DM_immediate
+            : DM_dependency2? DM_dValue2
+            : DM_Wat == DM_addr_r2? DM_Wvalue
+            : data_out2
+        : DM_immediate;
+
+    assign DM_bImmediate =
+        is_mem && DM_w? 
+            DM_dependency2? DM_dValue2
+            : DM_Wat == DM_addr_r2? DM_Wvalue
+            : data_out2
+        : D_bImmediate;
 
 
-    assign DM_stall = !DM_take_branch & (DM_rob_stall || (is_mul && DM_mul_stall) || (is_alu && DM_alu_stall) || (DM_dependency1 && !DM_resolved1) || (DM_dependency2 && !DM_resolved2));
+    assign DM_stall = !DM_take_branch & (DM_rob_stall || (is_mul && DM_mul_stall) || (is_alu && DM_alu_stall) || (DM_dependency1 && !DM_resolved1) || (( !DM_Ie || (is_mem && DM_w)) && DM_dependency2 && !DM_resolved2) || (is_mem && DM_mem_stall));
     assign DM_use_alu = is_alu & !DM_take_branch;
     assign DM_use_mul = is_mul & !DM_take_branch;
+        assign DM_use_mem = is_mem & !DM_take_branch;
 
 endmodule

@@ -15,7 +15,8 @@ module Decoder #(parameter ADDRESS_SIZE=32, REG_ADDRESS_SIZE=5)(
     output D_b,
     output [ADDRESS_SIZE-1:0] D_bImmediate,
     output is_mul,
-    output is_alu);
+    output is_alu,
+    output is_mem);
 
 
 
@@ -43,6 +44,8 @@ module Decoder #(parameter ADDRESS_SIZE=32, REG_ADDRESS_SIZE=5)(
         (D_instruction[6:0] == IR)? { {20{D_instruction[31]}} , D_instruction[31:20] }
         : (D_instruction[6:0] == J)? { {20{D_instruction[31]}}, D_instruction[31:20] }
         : (D_instruction[6:0] == B)? { {20{D_instruction[31]}}, D_instruction[7], D_instruction[30:25], D_instruction[11:8], 1'b0 }
+        : (D_instruction[6:0] == LR)? { {20{D_instruction[31]}}, D_instruction[31:20]}
+        : (D_instruction[6:0] == SR)? { {20{D_instruction[31]}}, D_instruction[31:25], D_instruction[11:7]}
         : 0;
 
     assign D_We = 
@@ -50,6 +53,8 @@ module Decoder #(parameter ADDRESS_SIZE=32, REG_ADDRESS_SIZE=5)(
         :D_instruction[6:0] == RR? 1 
         :D_instruction[6:0] == J? 1
         :D_instruction[6:0] == B? 0
+        :D_instruction[6:0] == LR? 0
+        :D_instruction[6:0] == SR? 1
         :0;
 
     assign D_Ie= 
@@ -74,10 +79,11 @@ module Decoder #(parameter ADDRESS_SIZE=32, REG_ADDRESS_SIZE=5)(
         :0;
 
     assign is_alu = 
-        D_instruction[6:0] == RR && D_instruction[25]? 0
+        (D_instruction[6:0] == RR && D_instruction[25]) || is_mem? 0
         : 1;
 
     assign is_mul = D_instruction[6:0] == RR && D_instruction[25];
-                                                    
+
+    assign is_mem = D_instruction[6:0] == LR || D_instruction[6:0] == SR;                                           
 
 endmodule
