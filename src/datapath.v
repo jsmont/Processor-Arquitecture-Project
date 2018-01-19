@@ -1,4 +1,4 @@
-module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'h1000, REG_ADDRESS_SIZE=5, REGISTER_SIZE=32, ID_SIZE=2)(
+module Datapath #(parameter ADDRESS_SIZE=32, BOOT_ADDRESS=32'h1000, MEM_SIZE=32'h1000, REG_ADDRESS_SIZE=5, REGISTER_SIZE=32, ID_SIZE=3)(
     input reset,
     input clk);
 

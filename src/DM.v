@@ -127,14 +127,14 @@ Decoder d(
 
     assign DM_operand1 =
         DM_dependency1? DM_dValue1
-        : DM_Wat == DM_addr_r1? DM_Wvalue
+        : DM_Wat == DM_addr_r1 && DM_We && DM_addr_r1 != 0? DM_Wvalue
         : data_out1;
 
     assign DM_operand2 =
         !is_mem?
             DM_Ie? DM_immediate
             : DM_dependency2? DM_dValue2
-            : DM_Wat == DM_addr_r2? DM_Wvalue
+            : DM_Wat == DM_addr_r2 && DM_We && DM_addr_r2 != 0? DM_Wvalue
             : data_out2
         : DM_immediate;
 

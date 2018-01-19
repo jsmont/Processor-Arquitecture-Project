@@ -1,24 +1,102 @@
-module direct_cache #(parameter ACCESS_LENGTH=8, LINE_LENGTH=8, CACHE_LENGTH=4, ADDRESS_SIZE=4)(
-    input clk,
+module direct_cache #(parameter REGISTER_SIZE=32, REGS_PER_LINE=4, LINE_LENGTH=REGISTER_SIZE*REGS_PER_LINE, LINE_INDEX_SIZE=2, ADDRESS_SIZE=32) (
     input reset,
-
-    input [0:ACCESS_LENGTH-1] data_in,
-    input [0:ADDRESS_SIZE-1] addr,
+    input clk,
+    input [ADDRESS_SIZE-1:0] address,
+    input [REGISTER_SIZE-1:0] data,
     input write,
+    input request,
 
-    output [0:ACCESS_LENGTH-1] data_out);
+    output [REGISTER_SIZE-1:0] result,
+    output satisfied,
 
-    parameter TAG_SIZE= ADDRESS_SIZE - 2 - $clog2(CACHE_LENGTH);
-    parameter INDEX_SIZE= $clog2(CACHE_LENGTH);
+    output mem_req,
+    output [ADDRESS_SIZE-1:0] mem_address,
+    output [(1<<LINE_INDEX_SIZE)-1:0] mem_data,
+    output mem_write,
 
-    wire [0:LINE_LENGTH +TAG_SIZE + 2 - 1] cache_line_in = 1 + 1 + addr[ADDRESS_SIZE-1-TAG_SIZE:ADDRESS_SIZE-1] + data_in; 
+    input [(1<< LINE_INDEX_SIZE)-1:0] mem_result,
+    input mem_satisfied
+    );
 
-    memory_bank #(
-        LINE_LENGTH + TAG_SIZE + 2,
-        INDEX_SIZE)
-    cache_mem (
-        .clk(clk),
-        .reset(reset),
+    parameter NORMAL=0;
+    parameter DIRTY=1;
+    parameter WAITING=2;
+
+    reg [1:0] state;
+
+    initial state=NORMAL;
+
+    wire [ADDRESS_SIZE-LINE_INDEX_SIZE-$clog2(REGS_PER_LINE)-1:0] req_tag = address[ADDRESS_SIZE-1:LINE_INDEX_SIZE+$clog2(REGS_PER_LINE)];
+    wire [LINE_INDEX_SIZE-1:0] row = address[LINE_INDEX_SIZE+$clog2(REGS_PER_LINE)-1:$clog2(REGS_PER_LINE)];
+    wire [LINE_INDEX_SIZE-1:0] mem_row = mem_address[LINE_INDEX_SIZE+$clog2(REGS_PER_LINE)-1:$clog2(REGS_PER_LINE)];
+    wire [$clog2(REGS_PER_LINE)-1:0] offset = address[$clog2(REGS_PER_LINE)-1:0];
+
+    wire [(1<<LINE_INDEX_SIZE)-1:0][ADDRESS_SIZE-LINE_INDEX_SIZE-$clog2(REGS_PER_LINE)-1:0]tag;
+    wire [(1<<LINE_INDEX_SIZE)-1:0] match;
+    wire [(1<<LINE_INDEX_SIZE)-1:0][$clog2(REGS_PER_LINE)-1:0][REGISTER_SIZE-1:0] words;
+    wire [(1<<LINE_INDEX_SIZE)-1:0][LINE_LENGTH-1:0]line;
+    wire [(1<<LINE_INDEX_SIZE)-1:0] dirty;
+    wire [(1<<LINE_INDEX_SIZE)-1:0] valid;
+
+    generate
+        genvar i,j;
+
+        for(i = 0; i < (1<<LINE_INDEX_SIZE)-1;i=i+1)
+        begin
+
+            assign match[i] = tag[i] == req_tag && valid[i];
+
+            FF #(ADDRESS_SIZE-LINE_INDEX_SIZE-$clog2(REGS_PER_LINE)) tag (
+                .in(mem_address[ADDRESS_SIZE-1:LINE_INDEX_SIZE+$clog2(REGS_PER_LINE)]),
+                .out(tag[i]),
+                .stall(state != WAITING || mem_row != i || !mem_satisfied),      
+                .reset(reset),
+                .write(clk),
+                .erase(1'b0)
+                );
+
+            FF #(LINE_LENGTH) line (
+                .in(words[i]),
+                .out(line[i]),
+                .stall((state != WAITING || mem_row != i || !mem_satisfied) && (state != NORMAL || row != i || !write)),      
+                .reset(reset),
+                .write(clk),
+                .erase(1'b0)
+                );
+
+                FF #(2) valid (
+                    .in({state==NORMAL, 1'b1}),
+                    .out({dirty[i], valid[i]}),
+                    .stall(state == DIRTY || (state==WAITING && mem_row != i) || (state==NORMAL && row != i)),
+                    .erase(1'b0),
+                    .write(clk),
+                    .reset(reset));
+
+            for(j = 0; j < REGS_PER_LINE; j=j+1)
+            begin
+                assign words[i][j] = 
+                    state == WAITING && mem_row == i? mem_result[(j+1)*REGISTER_SIZE-1:j*REGISTER_SIZE]
+                    : (state == NORMAL && row == i && match[i] && write)? data
+                    : line[i][(j+1)*REGISTER_SIZE-1:j*REGISTER_SIZE];
+            end
+        end
+
+    endgenerate
+
+    assign #1 state =
+        state == NORMAL && request && !match[row]?
+            dirty[row]? DIRTY
+            : WAITING
+        : state == DIRTY && mem_satisfied? WAITING
+        : state == WAITING && mem_satisfied? NORMAL
+        : state;
+
+    assign satisfied = state==NORMAL && match[row] && request;
+    assign result = words[row][offset];
+
+    assign mem_req = state !=NORMAL;
+    assign mem_write = state == DIRTY;
+    assign mem_address = { req_tag, 0};
 
 
 endmodule
