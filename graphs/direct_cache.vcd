@@ -1,0 +1,451 @@
+$date
+	Fri Jan 19 05:24:52 2018
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module test $end
+$var wire 1 ! satisfied $end
+$var wire 32 " result [31:0] $end
+$var reg 32 # address [31:0] $end
+$var reg 1 $ clk $end
+$var reg 32 % data [31:0] $end
+$var reg 128 & mem_result [127:0] $end
+$var reg 1 ' mem_satisfied $end
+$var reg 1 ( request $end
+$var reg 1 ) reset $end
+$var reg 1 * write $end
+$scope module dcache $end
+$var wire 32 + address [31:0] $end
+$var wire 1 $ clk $end
+$var wire 32 , data [31:0] $end
+$var wire 2 - mem_data [1:0] $end
+$var wire 128 . mem_result [127:0] $end
+$var wire 1 ' mem_satisfied $end
+$var wire 1 ( request $end
+$var wire 1 ) reset $end
+$var wire 1 ! satisfied $end
+$var wire 1 * write $end
+$var wire 2 / valid [1:0] $end
+$var wire 58 0 tag [57:0] $end
+$var wire 1 1 row $end
+$var wire 32 2 result [31:0] $end
+$var wire 29 3 req_tag [28:0] $end
+$var wire 2 4 offset [1:0] $end
+$var wire 1 5 mem_write $end
+$var wire 1 6 mem_row $end
+$var wire 1 7 mem_req $end
+$var wire 32 8 mem_address [31:0] $end
+$var wire 2 9 match [1:0] $end
+$var wire 256 : line [255:0] $end
+$var wire 2 ; dirty [1:0] $end
+$var reg 2 < state [1:0] $end
+$scope begin genblk1[0] $end
+$scope begin genblk2[0] $end
+$upscope $end
+$scope begin genblk2[1] $end
+$upscope $end
+$scope begin genblk2[2] $end
+$upscope $end
+$scope begin genblk2[3] $end
+$upscope $end
+$scope module line $end
+$var wire 1 = erase $end
+$var wire 128 > in [127:0] $end
+$var wire 128 ? out [127:0] $end
+$var wire 1 ) reset $end
+$var wire 1 @ stall $end
+$var wire 1 $ write $end
+$var reg 128 A data [127:0] $end
+$upscope $end
+$scope module tag $end
+$var wire 1 B erase $end
+$var wire 29 C in [28:0] $end
+$var wire 29 D out [28:0] $end
+$var wire 1 ) reset $end
+$var wire 1 E stall $end
+$var wire 1 $ write $end
+$var reg 29 F data [28:0] $end
+$upscope $end
+$scope module valid $end
+$var wire 1 G erase $end
+$var wire 2 H in [1:0] $end
+$var wire 2 I out [1:0] $end
+$var wire 1 ) reset $end
+$var wire 1 J stall $end
+$var wire 1 $ write $end
+$var reg 2 K data [1:0] $end
+$upscope $end
+$upscope $end
+$scope begin genblk1[1] $end
+$scope begin genblk2[0] $end
+$upscope $end
+$scope begin genblk2[1] $end
+$upscope $end
+$scope begin genblk2[2] $end
+$upscope $end
+$scope begin genblk2[3] $end
+$upscope $end
+$scope module line $end
+$var wire 1 L erase $end
+$var wire 128 M in [127:0] $end
+$var wire 128 N out [127:0] $end
+$var wire 1 ) reset $end
+$var wire 1 O stall $end
+$var wire 1 $ write $end
+$var reg 128 P data [127:0] $end
+$upscope $end
+$scope module tag $end
+$var wire 1 Q erase $end
+$var wire 29 R in [28:0] $end
+$var wire 29 S out [28:0] $end
+$var wire 1 ) reset $end
+$var wire 1 T stall $end
+$var wire 1 $ write $end
+$var reg 29 U data [28:0] $end
+$upscope $end
+$scope module valid $end
+$var wire 1 V erase $end
+$var wire 2 W in [1:0] $end
+$var wire 2 X out [1:0] $end
+$var wire 1 ) reset $end
+$var wire 1 Y stall $end
+$var wire 1 $ write $end
+$var reg 2 Z data [1:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+b0 Z
+1Y
+b0 X
+b11 W
+0V
+b0 U
+1T
+b0 S
+b0 R
+0Q
+b0 P
+1O
+b0 N
+b0 M
+0L
+b0 K
+1J
+b0 I
+b11 H
+0G
+b0 F
+1E
+b0 D
+b0 C
+0B
+b0 A
+1@
+b0 ?
+b0 >
+0=
+b0 <
+b0 ;
+b0 :
+b0 9
+b0 8
+07
+06
+05
+b0 4
+b0 3
+b0 2
+01
+b0 0
+b0 /
+b1 .
+bz -
+b0 ,
+b0 +
+0*
+1)
+0(
+0'
+b1 &
+b0 %
+0$
+b0 #
+b0 "
+0!
+$end
+#10
+1$
+#11
+0)
+#20
+0$
+#30
+1$
+#31
+1(
+#32
+0J
+b1 >
+b1 "
+b1 2
+1Y
+17
+b1 H
+b1 W
+b10 <
+#40
+0$
+#50
+1$
+#51
+b1 9
+b1 /
+b1 I
+b1 K
+#60
+0$
+#70
+1$
+#80
+0$
+#90
+1$
+#100
+0$
+#110
+1$
+#120
+0$
+#130
+1$
+#140
+0$
+#150
+1$
+#160
+0$
+#170
+1$
+#180
+0$
+#190
+1$
+#200
+0$
+#210
+1$
+#220
+0$
+#230
+1$
+#231
+0@
+0E
+1'
+#232
+1@
+1!
+1E
+1J
+b0 >
+b0 "
+b0 2
+07
+b11 H
+b11 W
+b0 <
+#240
+0$
+#250
+1$
+#251
+0'
+#260
+0$
+#270
+1$
+#271
+0!
+0(
+#280
+0$
+#281
+b0 >
+b0 "
+b0 2
+0@
+b1 R
+b1 C
+b0 9
+b1000 8
+b1 3
+b1 4
+b1 %
+b1 ,
+1*
+b1001 #
+b1001 +
+#282
+0J
+1(
+#290
+1$
+#291
+b1 ;
+b11 I
+b11 K
+#292
+1@
+1J
+17
+15
+b1 H
+b1 W
+b1 <
+#300
+0$
+#310
+1$
+#320
+0$
+#330
+1$
+#340
+0$
+#350
+1$
+#360
+0$
+#370
+1$
+#380
+0$
+#390
+1$
+#400
+0$
+#410
+1$
+#420
+0$
+#430
+1$
+#440
+0$
+#450
+1$
+#460
+0$
+#470
+1$
+#480
+0$
+#482
+1'
+#490
+1$
+#492
+0@
+0E
+0J
+b1 >
+05
+b10 <
+#500
+0$
+#502
+1@
+1E
+0'
+#510
+1$
+#511
+b0 ;
+b1 I
+b1 K
+#520
+0$
+#530
+1$
+#540
+0$
+#550
+1$
+#560
+0$
+#570
+1$
+#580
+0$
+#590
+1$
+#600
+0$
+#610
+1$
+#620
+0$
+#630
+1$
+#640
+0$
+#650
+1$
+#660
+0$
+#670
+1$
+#680
+0$
+#690
+1$
+#700
+0$
+#702
+0@
+0E
+1'
+#710
+1$
+#711
+b1 9
+b1 0
+b1 D
+b1 F
+b1 :
+b1 ?
+b1 A
+#712
+b100000000000000000000000000000001 >
+b1 "
+b1 2
+1!
+1E
+07
+b11 H
+b11 W
+b0 <
+#720
+0$
+#730
+1$
+#731
+b1 ;
+b11 I
+b11 K
+b100000000000000000000000000000001 :
+b100000000000000000000000000000001 ?
+b100000000000000000000000000000001 A
+#740
+0$
+#750
+1$
+#752

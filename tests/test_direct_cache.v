@@ -1,6 +1,6 @@
 module test();
 
-    wire reset;
+    reg reset;
     reg clk=0;
     
     parameter ADDRESS_SIZE=32;
@@ -21,7 +21,7 @@ module test();
         $dumpfile("test.vcd");
         $dumpvars(0, test);
 
-        reset =1;
+        reset = 1;
 
         mem_result = 1;
 
@@ -29,25 +29,40 @@ module test();
 
         data = 0;
 
+
         write = 0;
 
         request = 0;
 
         mem_satisfied = 0;
 
-        #1 reset = 0;
+        #11 reset = 0;
 
-        #2 request = 1;
+        #20 request = 1;
 
-        #2 mem_satisfied = 1;
+        #200 mem_satisfied = 1;
 
-        #2 request = 0;
+        #20 mem_satisfied = 0;
+
+        #20 request = 0;
+
+        #10 address = 9;
+
+        write =1;
+
+        data = 1;
+
         
+        #1 request =1;
+        
+        #200 mem_satisfied = 1;
+        #20 mem_satisfied= 0;
+        #200 mem_satisfied = 1;
         #50 $finish;
 
     end 
 
-    always #1 clk = !clk;
+    always #10 clk = !clk;
 
     direct_cache #(
         .REGS_PER_LINE(4),
